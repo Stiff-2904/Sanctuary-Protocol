@@ -4,8 +4,7 @@
 
 ## 🛡️ Sobre Sanctuary Protocol
 Nombre clave del sistema: **Sanctuary Protocol**  
-Curso: **EIF209 Programación IV**  
-Grupo: **[Número de Grupo]**
+Curso: **EIF209 Programación IV**
 
 ## 🛠️ Stack Tecnológico
 - **Frontend:** React 18 + TypeScript + Vite
