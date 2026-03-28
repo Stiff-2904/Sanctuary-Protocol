@@ -3,6 +3,7 @@ import cors from 'cors';
 import { pool } from './config/db.js';
 import campRoutes from './routes/camp.routes.js';
 import admissionRoutes from './routes/admissionroutes.js';
+import campRequestRoutes from './routes/campRequest.routes.js';
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.get('/test-db', async (req, res) => {
 
 app.use('/api', campRoutes);
 app.use('/api', admissionRoutes);
+app.use('/api', campRequestRoutes);
 
 export default app;
