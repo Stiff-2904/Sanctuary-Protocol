@@ -1,0 +1,45 @@
+import { createAdmission } from '../models/admission.model.js';
+import { approveAdmission } from '../models/admission.model.js';
+import { getAdmissions } from '../models/admission.model.js';
+
+export const createAdmissionController = async (req, res) => {
+  try {
+    const { person_id, camp_id, skills } = req.body;
+
+    const admission = await createAdmission({ person_id, camp_id, skills });
+
+    res.status(201).json(admission);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error creating admission',
+      error: error.message,
+    });
+  }
+};
+
+export const approveAdmissionController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await approveAdmission(id);
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error approving admission',
+      error: error.message,
+    });
+  }
+};
+
+export const getAdmissionsController = async (req, res) => {
+  try {
+    const admissions = await getAdmissions();
+    res.json(admissions);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching admissions',
+      error: error.message,
+    });
+  }
+};
