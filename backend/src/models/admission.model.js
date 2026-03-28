@@ -39,3 +39,27 @@ export const approveAdmission = async (request_id) => {
 
   return { message: 'Admission approved' };
 };
+
+export const rejectAdmission = async (request_id) => {
+  // get request details
+  const [rows] = await pool.query(
+    'SELECT * FROM admission_request WHERE request_id = ?',
+    [request_id],
+  );
+
+  const request = rows[0];
+
+  // update request status
+  await pool.query(
+    'UPDATE admission_request SET status = "rejected" WHERE request_id = ?',
+    [request_id],
+  );
+
+  // update person status and camp_id
+  await pool.query(
+    'UPDATE person SET status = "rejected", camp_id = NULL WHERE person_id = ?',
+    [request.person_id],
+  );
+
+  return { message: 'Admission rejected' };
+};
