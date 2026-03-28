@@ -69,6 +69,7 @@ export const approveCampRequest = async (request_id) => {
   try {
     await connection.beginTransaction();
 
+    // 1. GET REQUEST
     const [rows] = await connection.query(
       'SELECT * FROM camp_request WHERE request_id = ?',
       [request_id],
@@ -82,12 +83,55 @@ export const approveCampRequest = async (request_id) => {
 
     const { source_camp_id, target_camp_id } = request;
 
-    // VALIDATE PERSONS
+    // 2. VALIDATE CAMPS
+    const [sourceCamp] = await connection.query(
+      'SELECT status FROM camp WHERE camp_id = ?',
+      [source_camp_id],
+    );
+
+    const [targetCamp] = await connection.query(
+      'SELECT status FROM camp WHERE camp_id = ?',
+      [target_camp_id],
+    );
+
+    if (!sourceCamp.length || sourceCamp[0].status !== 'Active') {
+      throw new Error('Source camp is not active');
+    }
+
+    if (!targetCamp.length || targetCamp[0].status !== 'Active') {
+      throw new Error('Target camp is not active');
+    }
+
+    // 3. GET CONTENT
+    const [resources] = await connection.query(
+      'SELECT * FROM request_resource WHERE request_id = ?',
+      [request_id],
+    );
+
     const [persons] = await connection.query(
       'SELECT * FROM request_person WHERE request_id = ?',
       [request_id],
     );
 
+    // 4. VALIDATE CONTENT
+    if (resources.length === 0 && persons.length === 0) {
+      throw new Error('Request has no content');
+    }
+
+    // 5. VALIDATE RESOURCES 🔥
+    for (const r of resources) {
+      const [inventoryRows] = await connection.query(
+        `SELECT quantity FROM inventory 
+         WHERE camp_id = ? AND resource_id = ?`,
+        [source_camp_id, r.resource_id],
+      );
+
+      if (!inventoryRows.length || inventoryRows[0].quantity < r.quantity) {
+        throw new Error(`Not enough resource ${r.resource_id}`);
+      }
+    }
+
+    // 6. VALIDATE PERSONS 🔥
     for (const p of persons) {
       const [available] = await connection.query(
         `SELECT * FROM person 
@@ -103,7 +147,31 @@ export const approveCampRequest = async (request_id) => {
       }
     }
 
-    // MOVE PEOPLE
+    // 7. EXECUTE RESOURCES 🔥
+    for (const r of resources) {
+      await connection.query(
+        `UPDATE inventory 
+         SET quantity = quantity - ?
+         WHERE camp_id = ? AND resource_id = ? AND quantity >= ?`,
+        [r.quantity, source_camp_id, r.resource_id, r.quantity],
+      );
+
+      await connection.query(
+        `INSERT INTO inventory (camp_id, resource_id, quantity)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
+        [target_camp_id, r.resource_id, r.quantity, r.quantity],
+      );
+
+      await connection.query(
+        `INSERT INTO resource_movement 
+         (resource_id, source_camp_id, target_camp_id, quantity, movement_date)
+         VALUES (?, ?, ?, ?, CURDATE())`,
+        [r.resource_id, source_camp_id, target_camp_id, r.quantity],
+      );
+    }
+
+    // 8. EXECUTE PERSONS 🔥
     for (const p of persons) {
       const [available] = await connection.query(
         `SELECT * FROM person 
@@ -129,6 +197,7 @@ export const approveCampRequest = async (request_id) => {
       }
     }
 
+    // 9. UPDATE STATUS
     await connection.query(
       `UPDATE camp_request SET status = 'approved' WHERE request_id = ?`,
       [request_id],
@@ -147,6 +216,17 @@ export const approveCampRequest = async (request_id) => {
 
 // REJECT REQUEST
 export const rejectCampRequest = async (request_id) => {
+  const [rows] = await pool.query(
+    'SELECT * FROM camp_request WHERE request_id = ?',
+    [request_id],
+  );
+
+  const request = rows[0];
+
+  if (!request) throw new Error('Request not found');
+  if (request.status !== 'pending')
+    throw new Error('Request already processed');
+
   await pool.query(
     `UPDATE camp_request SET status = 'rejected' WHERE request_id = ?`,
     [request_id],
