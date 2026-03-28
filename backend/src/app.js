@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { pool } from './config/db.js';
+import campRoutes from './routes/camp.routes.js';
 
 const app = express();
 
@@ -19,5 +20,7 @@ app.get('/test-db', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.use('/api', campRoutes);
 
 export default app;
