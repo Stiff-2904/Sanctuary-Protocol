@@ -3,6 +3,7 @@ import { addResourceToRequest } from '../models/campRequest.model.js';
 import { addPersonToRequest } from '../models/campRequest.model.js';
 import { approveCampRequest } from '../models/campRequest.model.js';
 import { rejectCampRequest } from '../models/campRequest.model.js';
+import { getCampRequests } from '../models/campRequest.model.js';
 
 export const createCampRequestController = async (req, res) => {
   try {
@@ -67,6 +68,18 @@ export const rejectCampRequestController = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Error rejecting request',
+      error: error.message,
+    });
+  }
+};
+
+export const getCampRequestsController = async (req, res) => {
+  try {
+    const data = await getCampRequests();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching requests',
       error: error.message,
     });
   }

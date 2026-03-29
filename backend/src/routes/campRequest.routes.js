@@ -4,6 +4,7 @@ import { addResourceController } from '../controllers/campRequest.controller.js'
 import { addPersonController } from '../controllers/campRequest.controller.js';
 import { approveCampRequestController } from '../controllers/campRequest.controller.js';
 import { rejectCampRequestController } from '../controllers/campRequest.controller.js';
+import { getCampRequestsController } from '../controllers/campRequest.controller.js';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.post('/camp-requests/:id/persons', addPersonController);
 
 router.put('/camp-requests/:id/approve', approveCampRequestController);
 router.put('/camp-requests/:id/reject', rejectCampRequestController);
+router.get('/camp-requests', getCampRequestsController);
 
 export default router;

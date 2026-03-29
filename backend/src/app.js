@@ -5,6 +5,7 @@ import campRoutes from './routes/camp.routes.js';
 import admissionRoutes from './routes/admission.routes.js';
 import campRequestRoutes from './routes/campRequest.routes.js';
 import personRoutes from './routes/person.routes.js';
+import inventoryRoutes from './routes/inventory.routes.js';
 
 const app = express();
 
@@ -28,5 +29,6 @@ app.use('/api', campRoutes);
 app.use('/api', admissionRoutes);
 app.use('/api', campRequestRoutes);
 app.use('/api', personRoutes);
+app.use('/api', inventoryRoutes);
 
 export default app;
