@@ -30,8 +30,12 @@ export const addResourceToRequest = async ({
   resource_id,
   quantity,
 }) => {
-  if (!request_id || !resource_id || !quantity) {
+  if (!request_id || !resource_id || quantity === undefined) {
     throw new Error('Missing required fields');
+  }
+
+  if (quantity <= 0) {
+    throw new Error('Quantity must be greater than 0');
   }
 
   await pool.query(
@@ -49,8 +53,12 @@ export const addPersonToRequest = async ({
   profession_id,
   quantity,
 }) => {
-  if (!request_id || !profession_id || !quantity) {
+  if (!request_id || !profession_id || quantity === undefined) {
     throw new Error('Missing required fields');
+  }
+
+  if (quantity <= 0) {
+    throw new Error('Quantity must be greater than 0');
   }
 
   await pool.query(
@@ -126,7 +134,10 @@ export const approveCampRequest = async (request_id) => {
         [source_camp_id, r.resource_id],
       );
 
-      if (!inventoryRows.length || inventoryRows[0].quantity < r.quantity) {
+      const availableQty = Number(inventoryRows[0]?.quantity);
+      const requestedQty = Number(r.quantity);
+
+      if (!inventoryRows.length || availableQty < requestedQty) {
         throw new Error(`Not enough resource ${r.resource_id}`);
       }
     }
@@ -233,4 +244,18 @@ export const rejectCampRequest = async (request_id) => {
   );
 
   return { message: 'Camp request rejected' };
+};
+
+// GET ALL REQUESTS
+export const getCampRequests = async () => {
+  const [rows] = await pool.query(`
+    SELECT cr.*, 
+           c1.name AS source_camp,
+           c2.name AS target_camp
+    FROM camp_request cr
+    JOIN camp c1 ON cr.source_camp_id = c1.camp_id
+    JOIN camp c2 ON cr.target_camp_id = c2.camp_id
+  `);
+
+  return rows;
 };
