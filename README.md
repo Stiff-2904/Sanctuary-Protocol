@@ -1,6 +1,5 @@
-# 🧟 Gestión del fin | Sanctuary Protocol
-
-> Sistema de gestión de supervivencia para campamentos post-apocalípticos.
+🧟 Gestión del fin | Sanctuary Protocol
+Sistema de gestión de supervivencia para campamentos post-apocalípticos.
 
 ---
 
@@ -8,53 +7,97 @@
 
 The backend has been initialized using:
 
-- Node.js
-- Express.js
-- MySQL
-
-### 📌 Current Modules Implemented
+* Node.js
+* Express.js
+* MySQL
 
 ---
 
+## 📌 Current Modules Implemented
+
 ### 🏕️ Camps
 
-- GET /api/camps → Get all camps  
-- POST /api/camps → Create camp  
-- PUT /api/camps/:id → Update camp  
+* GET /api/camps → Get all camps
+* POST /api/camps → Create camp
+* PUT /api/camps/:id → Update camp
 
-⚠️ Camps are not physically deleted.  
+⚠️ Camps are not physically deleted.
 Logical deletion is handled using the `status` field to preserve referential integrity.
 
 ---
 
 ### 👤 Admissions (Core System Logic)
 
-- POST /api/admissions → Create admission request  
-- GET /api/admissions → Get all admission requests  
-- PUT /api/admissions/:id/approve → Approve admission  
+* POST /api/admissions → Create admission request
+* GET /api/admissions → Get all admission requests
+* PUT /api/admissions/:id/approve → Approve admission
+* PUT /api/admissions/:id/reject → Reject admission
+
+🧠 Admission Flow:
+
+* A person submits an admission request
+* Request starts with status: `pending`
+* When approved:
+
+  * Admission status → `approved`
+  * Person is assigned to a camp (`camp_id`)
+  * Person status → `active`
+* When rejected:
+
+  * Admission status → `rejected`
+  * Person remains without camp
 
 ---
 
-### 🧠 Admission Flow
+### 🔄 Camp Requests (Inter-Camp System)
 
-1. A person submits an admission request  
-2. Request starts with status: `pending`  
-3. When approved:
-   - Admission status → `approved`
-   - Person is assigned to a camp (`camp_id`)
-   - Person status → `active`
+* POST /api/camp-requests → Create request
+* POST /api/camp-requests/:id/resources → Add resources
+* POST /api/camp-requests/:id/persons → Add persons
+* PUT /api/camp-requests/:id/approve → Approve request
+* PUT /api/camp-requests/:id/reject → Reject request
+* GET /api/camp-requests → Get all requests
+
+🧠 Flow:
+
+* A camp requests resources or personnel from another camp
+* Request is built incrementally (resources/persons)
+* On approval:
+
+  * Resources are transferred between inventories
+  * People are reassigned between camps
+  * Movements are logged
+* Full transaction support ensures data consistency
 
 ---
 
-### ⚠️ Important Design Decisions
+### 📦 Inventory (Resource Management)
 
-- `person.camp_id` is nullable (assigned only after approval)
-- Referential integrity is enforced (no unsafe deletes)
-- Camps use logical deletion instead of physical deletion
+* GET /api/inventory → Get all inventory
+* GET /api/inventory/:camp_id → Get inventory by camp
+* POST /api/inventory → Add or increase resources
+* PUT /api/inventory/:id → Update quantity
+
+🧠 Features:
+
+* Supports **decimal quantities** (e.g., water, fuel)
+* Uses `ON DUPLICATE KEY UPDATE` for aggregation
+* Prevents negative or invalid values
 
 ---
 
-### 📁 Backend Structure
+## ⚙️ Key Technical Features
+
+* ✅ Transaction management for critical operations
+* ✅ Decimal handling for flexible resource quantities
+* ✅ Data validation at model level
+* ✅ Referential integrity enforced via foreign keys
+* ✅ Logical deletion strategy for camps
+* ✅ Consistent error handling
+
+---
+
+## 📁 Backend Structure
 
 backend/
 ├── src/
@@ -65,9 +108,12 @@ backend/
 │ ├── app.js
 │ └── index.js
 
+---
+
 ## 🚀 Next Steps
 
-- Admission rejection
-- AI evaluation module
-- Camp-to-camp requests
-- Resource and person movement
+* Authentication & Authorization (user_account + roles)
+* Resource API
+* Profession API
+* Exploration module
+* AI-based admission evaluation
