@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { pool } from './config/db.js';
 import campRoutes from './routes/camp.routes.js';
-import admissionRoutes from './routes/admissionroutes.js';
+import admissionRoutes from './routes/admission.routes.js';
 import campRequestRoutes from './routes/campRequest.routes.js';
+import personRoutes from './routes/person.routes.js';
 
 const app = express();
 
@@ -26,5 +27,6 @@ app.get('/test-db', async (req, res) => {
 app.use('/api', campRoutes);
 app.use('/api', admissionRoutes);
 app.use('/api', campRequestRoutes);
+app.use('/api', personRoutes);
 
 export default app;
