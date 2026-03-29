@@ -118,7 +118,7 @@ export const approveCampRequest = async (request_id) => {
       throw new Error('Request has no content');
     }
 
-    // 5. VALIDATE RESOURCES 🔥
+    // 5. VALIDATE RESOURCES
     for (const r of resources) {
       const [inventoryRows] = await connection.query(
         `SELECT quantity FROM inventory 
@@ -131,7 +131,7 @@ export const approveCampRequest = async (request_id) => {
       }
     }
 
-    // 6. VALIDATE PERSONS 🔥
+    // 6. VALIDATE PERSONS
     for (const p of persons) {
       const [available] = await connection.query(
         `SELECT * FROM person 
@@ -147,7 +147,7 @@ export const approveCampRequest = async (request_id) => {
       }
     }
 
-    // 7. EXECUTE RESOURCES 🔥
+    // 7. EXECUTE RESOURCES
     for (const r of resources) {
       await connection.query(
         `UPDATE inventory 
@@ -171,7 +171,7 @@ export const approveCampRequest = async (request_id) => {
       );
     }
 
-    // 8. EXECUTE PERSONS 🔥
+    // 8. EXECUTE PERSONS
     for (const p of persons) {
       const [available] = await connection.query(
         `SELECT * FROM person 
