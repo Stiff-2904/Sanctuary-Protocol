@@ -1,119 +1,147 @@
-🧟 Gestión del fin | Sanctuary Protocol
-Sistema de gestión de supervivencia para campamentos post-apocalípticos.
+# Sanctuary Protocol — Backend
+
+## Overview
+
+Sanctuary Protocol is a backend system designed to manage survival camps in a post-apocalyptic environment. It handles people admissions, resource management, and inter-camp operations with secure access control.
 
 ---
 
-## 🔧 Backend Implementation (Updated)
-
-The backend has been initialized using:
+## Technologies
 
 * Node.js
 * Express.js
 * MySQL
+* MVC Architecture
+* JWT Authentication
+* Role-Based Authorization
 
 ---
 
-## 📌 Current Modules Implemented
+## Security
 
-### 🏕️ Camps
+The system includes:
 
-* GET /api/camps → Get all camps
-* POST /api/camps → Create camp
-* PUT /api/camps/:id → Update camp
-
-⚠️ Camps are not physically deleted.
-Logical deletion is handled using the `status` field to preserve referential integrity.
+* JWT-based authentication
+* Role-based access control
+* Camp-level data restriction
+* Protected routes using middleware
 
 ---
 
-### 👤 Admissions (Core System Logic)
+## System Roles
 
-* POST /api/admissions → Create admission request
-* GET /api/admissions → Get all admission requests
-* PUT /api/admissions/:id/approve → Approve admission
-* PUT /api/admissions/:id/reject → Reject admission
-
-🧠 Admission Flow:
-
-* A person submits an admission request
-* Request starts with status: `pending`
-* When approved:
-
-  * Admission status → `approved`
-  * Person is assigned to a camp (`camp_id`)
-  * Person status → `active`
-* When rejected:
-
-  * Admission status → `rejected`
-  * Person remains without camp
+* **SuperAdmin** → Full access to all system operations
+* **Admin** → Manages admissions
+* **ResourceManager** → Handles inventory and resources
+* **Worker** → Limited inventory operations
+* **ExpeditionManager** → Manages camp requests and logistics
 
 ---
 
-### 🔄 Camp Requests (Inter-Camp System)
+## Modules
 
-* POST /api/camp-requests → Create request
-* POST /api/camp-requests/:id/resources → Add resources
-* POST /api/camp-requests/:id/persons → Add persons
-* PUT /api/camp-requests/:id/approve → Approve request
-* PUT /api/camp-requests/:id/reject → Reject request
-* GET /api/camp-requests → Get all requests
+### Camps
 
-🧠 Flow:
+* `GET /api/camps`
+* `POST /api/camps`
+* `PUT /api/camps/:id`
 
-* A camp requests resources or personnel from another camp
-* Request is built incrementally (resources/persons)
-* On approval:
-
-  * Resources are transferred between inventories
-  * People are reassigned between camps
-  * Movements are logged
-* Full transaction support ensures data consistency
+Logical deletion is used via a status field.
 
 ---
 
-### 📦 Inventory (Resource Management)
+### Admissions
 
-* GET /api/inventory → Get all inventory
-* GET /api/inventory/:camp_id → Get inventory by camp
-* POST /api/inventory → Add or increase resources
-* PUT /api/inventory/:id → Update quantity
+* `POST /api/admissions`
+* `GET /api/admissions`
+* `PUT /api/admissions/:id/approve`
+* `PUT /api/admissions/:id/reject`
 
-🧠 Features:
+**Flow:**
 
-* Supports **decimal quantities** (e.g., water, fuel)
-* Uses `ON DUPLICATE KEY UPDATE` for aggregation
-* Prevents negative or invalid values
-
----
-
-## ⚙️ Key Technical Features
-
-* ✅ Transaction management for critical operations
-* ✅ Decimal handling for flexible resource quantities
-* ✅ Data validation at model level
-* ✅ Referential integrity enforced via foreign keys
-* ✅ Logical deletion strategy for camps
-* ✅ Consistent error handling
+* A person submits a request
+* Status starts as `pending`
+* Admin approves or rejects
+* On approval → person is assigned to a camp
 
 ---
 
-## 📁 Backend Structure
+### Inventory
+
+* `GET /api/inventory` (SuperAdmin / ResourceManager)
+* `GET /api/inventory/me` (Worker / ResourceManager)
+* `POST /api/inventory`
+* `PUT /api/inventory/:id`
+
+**Features:**
+
+* Quantity aggregation using `ON DUPLICATE KEY UPDATE`
+* Decimal resource support
+* Validation against invalid values
+
+---
+
+### Camp Requests
+
+* `POST /api/camp-requests`
+* `POST /api/camp-requests/:id/resources`
+* `POST /api/camp-requests/:id/persons`
+* `PUT /api/camp-requests/:id/approve`
+* `PUT /api/camp-requests/:id/reject`
+* `GET /api/camp-requests`
+
+**Flow:**
+
+* Requests are created between camps
+* Resources and persons are attached
+* Approval triggers transfers and updates
+
+---
+
+## Key Features
+
+* Transaction management for critical operations
+* Data validation at model level
+* Referential integrity via foreign keys
+* Role-based route protection
+* Middleware-based architecture
+* Secure API access using JWT
+
+---
+
+## Project Structure
 
 backend/
-├── src/
-│ ├── config/
-│ ├── models/
-│ ├── controllers/
-│ ├── routes/
-│ ├── app.js
-│ └── index.js
+└── src/
+├── config/
+├── models/
+├── controllers/
+├── routes/
+├── middlewares/
+├── utils/
+├── app.js
+└── index.js
 
 ---
 
-## 🚀 Next Steps
+## Current Status
 
-* Authentication & Authorization (user_account + roles)
-* Resource API
-* Profession API
-* Exploration module
+* Core backend functionality implemented
+* Authentication and authorization completed
+* Role-based access fully enforced
+* System ready for frontend integration
+
+---
+
+## Future Improvements
+
 * AI-based admission evaluation
+* Logging and auditing
+* Frontend integration
+* Advanced validations
+
+---
+
+## Author
+
+Gaudy Montero
