@@ -7,7 +7,24 @@ export const createAdmissionController = async (req, res) => {
   try {
     const { person_id, camp_id, skills } = req.body;
 
-    const admission = await createAdmission({ person_id, camp_id, skills });
+    // validation
+    if (!person_id || !camp_id) {
+      return res.status(400).json({
+        message: 'person_id and camp_id are required',
+      });
+    }
+
+    if (!skills || skills.trim() === '') {
+      return res.status(400).json({
+        message: 'skills are required',
+      });
+    }
+
+    const admission = await createAdmission({
+      person_id,
+      camp_id,
+      skills,
+    });
 
     res.status(201).json(admission);
   } catch (error) {
@@ -22,7 +39,9 @@ export const approveAdmissionController = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await approveAdmission(id);
+    const approved_by = req.user?.user_id;
+
+    const result = await approveAdmission(id, approved_by);
 
     res.json(result);
   } catch (error) {

@@ -7,7 +7,28 @@ import { getCampRequests } from '../models/campRequest.model.js';
 
 export const createCampRequestController = async (req, res) => {
   try {
-    const result = await createCampRequest(req.body);
+    const { target_camp_id, description } = req.body;
+
+    const source_camp_id = req.user.camp_id;
+
+    if (!source_camp_id) {
+      return res.status(400).json({
+        message: 'User has no assigned camp',
+      });
+    }
+
+    if (!target_camp_id) {
+      return res.status(400).json({
+        message: 'target_camp_id is required',
+      });
+    }
+
+    const result = await createCampRequest({
+      source_camp_id,
+      target_camp_id,
+      description,
+    });
+
     res.status(201).json(result);
   } catch (error) {
     res.status(500).json({
