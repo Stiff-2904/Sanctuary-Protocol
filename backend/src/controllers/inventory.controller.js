@@ -3,6 +3,7 @@ import { getInventoryByCamp } from '../models/inventory.model.js';
 import { addInventory } from '../models/inventory.model.js';
 import { updateInventory } from '../models/inventory.model.js';
 
+// GET ALL
 export const getInventoryController = async (req, res) => {
   try {
     const data = await getInventory();
@@ -15,10 +16,18 @@ export const getInventoryController = async (req, res) => {
   }
 };
 
-// GET BY CAMP
+// GET INVENTORY DEL CAMP DEL USUARIO
 export const getInventoryByCampController = async (req, res) => {
   try {
-    const data = await getInventoryByCamp(req.params.camp_id);
+    const camp_id = req.user.camp_id;
+
+    if (!camp_id) {
+      return res.status(400).json({
+        message: 'User has no assigned camp',
+      });
+    }
+
+    const data = await getInventoryByCamp(camp_id);
     res.json(data);
   } catch (error) {
     res.status(500).json({

@@ -47,7 +47,7 @@ export const addInventory = async ({ camp_id, resource_id, quantity }) => {
 };
 
 // UPDATE INVENTORY
-export const updateInventory = async (id, { quantity }) => {
+export const updateInventory = async (id, { quantity }, userCamp) => {
   const [rows] = await pool.query(
     'SELECT * FROM inventory WHERE inventory_id = ?',
     [id],
@@ -55,6 +55,12 @@ export const updateInventory = async (id, { quantity }) => {
 
   if (rows.length === 0) {
     throw new Error('Inventory not found');
+  }
+
+  const inventory = rows[0];
+
+  if (userCamp && inventory.camp_id !== userCamp) {
+    throw new Error('Unauthorized: different camp');
   }
 
   if (quantity === undefined || quantity < 0) {
