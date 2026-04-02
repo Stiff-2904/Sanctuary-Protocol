@@ -19,6 +19,9 @@
 -- Table structure for table `admission_evaluation`
 --
 
+CREATE DATABASE IF NOT EXISTS sanctuary_protocol_db;
+USE `sanctuary_protocol_db`;
+
 DROP TABLE IF EXISTS `admission_evaluation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -231,8 +234,7 @@ CREATE TABLE `inventory` (
   `resource_id` int DEFAULT NULL,
   `quantity` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`inventory_id`),
-  UNIQUE KEY `camp_id` (`camp_id`,`resource_id`),
-  UNIQUE KEY `camp_id_2` (`camp_id`,`resource_id`),
+  UNIQUE KEY (`camp_id`,`resource_id`),
   KEY `resource_id` (`resource_id`),
   CONSTRAINT `inventory_ibfk_1` FOREIGN KEY (`camp_id`) REFERENCES `camp` (`camp_id`),
   CONSTRAINT `inventory_ibfk_2` FOREIGN KEY (`resource_id`) REFERENCES `resource` (`resource_id`)
