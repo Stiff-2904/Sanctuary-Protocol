@@ -1,0 +1,56 @@
+:root {
+  /* Colores tema zombie */
+  --zombie-dark: #0a0a0a;
+  --zombie-gray: #1a1a1a;
+  --zombie-green: #00ff41;
+  --zombie-green-dim: #008f11;
+  --zombie-red: #ff3333;
+  --zombie-blood: #8a0303;
+  --zombie-text: #e0e0e0;
+  --zombie-warning: #ffaa00;
+
+  /* Tipografía */
+  --font-mono: "Courier New", monospace;
+  --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 4rem;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--zombie-dark);
+  color: var(--zombie-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.text-green {
+  color: var(--zombie-green);
+}
+.text-red {
+  color: var(--zombie-red);
+}
+.text-warning {
+  color: var(--zombie-warning);
+}
+.bg-dark {
+  background: var(--zombie-dark);
+}
+.bg-gray {
+  background: var(--zombie-gray);
+}
