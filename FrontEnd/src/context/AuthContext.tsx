@@ -59,22 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [lastActivity, user, logout]);
 
-  const login = useCallback(async (email: string, password: string) => {
+const login = useCallback(async (username: string, password: string) => {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }), // ← era email
     });
 
     if (!response.ok) throw new Error("Credenciales inválidas");
 
     const data = await response.json();
     setToken(data.token);
-    setUser(data.usuario);
+    setUser(data.user);           // ← era data.usuario
     setLastActivity(new Date());
 
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.usuario));
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)); // ← era data.usuario
   }, []);
 
   return (

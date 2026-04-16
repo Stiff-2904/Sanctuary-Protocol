@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import "../Login.css"; 
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,8 +17,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate("/dashboard"); //entra al campamento
+      await login(username, password);
+      navigate("/dashboard");
     } catch (err) {
       console.error("Error en login:", err);
       setError(">  USUARIO NO RECONOCIDO. ACCESO DENEGADO.");
@@ -47,13 +47,13 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label htmlFor="username">E-MAIL DE USUARIO</label>
+            <label htmlFor="username">NOMBRE DE USUARIO</label>
             <input 
-              type="email" 
+              type="text"
               id="username" 
-              placeholder="Correo electrónico..." 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Nombre de usuario..." 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required 
             />
           </div>

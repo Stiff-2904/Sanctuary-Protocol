@@ -1,17 +1,15 @@
 // src/types/auth.ts
 
 export type User = {
-  id: number
-  nombre: string
-  email: string
-  rol: string
-  campamento_id: number | null
+  user_id: number
+  role: string
+  camp_id: number | null
 }
 
 export type AuthContextType = {
   user: User | null
   token: string | null
-  login: (email: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
 }

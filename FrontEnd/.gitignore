@@ -6,8 +6,10 @@ build/
 .vite/
 
 # Environment
+.env
 .env*.local
 *.log
+
 
 # IDE
 .vscode/
