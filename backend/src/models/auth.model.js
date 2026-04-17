@@ -63,6 +63,7 @@ export const loginUser = async ({ username, password }) => {
     token,
     user: {
       user_id: user.user_id,
+      username: user.username,
       role: user.role_name,
       camp_id: user.camp_id,
     },

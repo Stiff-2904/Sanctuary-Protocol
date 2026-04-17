@@ -23,3 +23,15 @@ export const authenticate = (req, res, next) => {
     });
   }
 };
+
+export const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    // Verificamos si el usuario existe (puesto por authenticate) y si su rol está permitido
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        message: 'Acceso denegado: No tienes los permisos necesarios'
+      });
+    }
+    next();
+  };
+};
