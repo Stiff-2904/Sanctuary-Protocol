@@ -1,23 +1,46 @@
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
-import { Users, Package, Map, Shield, LogOut } from "lucide-react";
+import { Users, Package, Map, Radio, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const ALL_MENU_ITEMS = [
+  {
+    icon: Users,
+    label: "Personas",
+    path: "/personas",
+    color: "#00ff41",
+    allowedRoles: ["Admin", "SuperAdmin"],
+  },
+  {
+    icon: Package,
+    label: "Recursos",
+    path: "/recursos",
+    color: "#ffaa00",
+    allowedRoles: ["Worker", "ResourceManager", "SuperAdmin"],
+  },
+  {
+    icon: Map,
+    label: "Exploraciones",
+    path: "/exploraciones",
+    color: "#008f11",
+    allowedRoles: ["ExpeditionManager", "SuperAdmin"],
+  },
+  {
+    icon: Radio,
+    label: "Solicitudes",
+    path: "/solicitudes",
+    color: "#00aaff",
+    allowedRoles: ["ExpeditionManager", "SuperAdmin"],
+  },
+];
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const menuItems = [
-    { icon: Users, label: "Personas", path: "/personas", color: "#00ff41" },
-    { icon: Package, label: "Recursos", path: "/recursos", color: "#ffaa00" },
-    {
-      icon: Map,
-      label: "Exploraciones",
-      path: "/exploraciones",
-      color: "#008f11",
-    },
-    { icon: Shield, label: "Seguridad", path: "/seguridad", color: "#ff3333" },
-  ];
+  const menuItems = ALL_MENU_ITEMS.filter(
+    (item) => user?.role && item.allowedRoles.includes(user.role)
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
@@ -43,7 +66,7 @@ export default function Dashboard() {
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <span style={{ color: "#888", fontFamily: "monospace" }}>
-            {user?.nombre} ({user?.rol})
+            {user?.username} ({user?.role})
           </span>
           <button
             onClick={logout}
@@ -75,12 +98,15 @@ export default function Dashboard() {
           <h2
             style={{
               color: "#e0e0e0",
-              marginBottom: "2rem",
+              marginBottom: "0.5rem",
               fontFamily: "monospace",
             }}
           >
             📊 Panel de Control
           </h2>
+          <p style={{ color: "#888", fontFamily: "monospace", marginBottom: "2rem" }}>
+            Bienvenido, {user?.username} — Rol: {user?.role}
+          </p>
 
           <div
             style={{
@@ -117,6 +143,9 @@ export default function Dashboard() {
                 <h3 style={{ color: "#e0e0e0", fontFamily: "monospace" }}>
                   {item.label}
                 </h3>
+                <p style={{ color: "#555", fontFamily: "monospace", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                  {item.allowedRoles.join(", ")}
+                </p>
               </motion.div>
             ))}
           </div>

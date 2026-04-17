@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 
 interface PrivateRouteProps {
   children: ReactNode;
-  requiredRole?: string;
+  allowedRoles?: string[];
 }
 
 export default function PrivateRoute({
   children,
-  requiredRole,
+  allowedRoles,
 }: PrivateRouteProps) {
   const { user, isAuthenticated } = useAuth();
 
@@ -17,7 +17,7 @@ export default function PrivateRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && user?.rol !== requiredRole) {
+  if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

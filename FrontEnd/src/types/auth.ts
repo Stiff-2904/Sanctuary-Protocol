@@ -2,7 +2,8 @@
 
 export type User = {
   user_id: number
-  role: string
+  username: string
+  role: string        
   camp_id: number | null
 }
 

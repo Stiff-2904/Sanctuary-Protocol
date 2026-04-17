@@ -63,18 +63,17 @@ const login = useCallback(async (username: string, password: string) => {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }), // ← era email
+      body: JSON.stringify({ username, password }), 
     });
 
     if (!response.ok) throw new Error("Credenciales inválidas");
 
     const data = await response.json();
     setToken(data.token);
-    setUser(data.user);           // ← era data.usuario
-    setLastActivity(new Date());
+    setUser(data.user);
 
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)); // ← era data.usuario
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)); 
   }, []);
 
   return (
