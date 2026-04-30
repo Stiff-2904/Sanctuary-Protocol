@@ -1,4 +1,5 @@
 import { registerUser, loginUser } from '../models/auth.model.js';
+import { generateToken } from '../utils/jwt.js';
 
 export const registerController = async (req, res) => {
   try {
@@ -11,9 +12,27 @@ export const registerController = async (req, res) => {
 
 export const loginController = async (req, res) => {
   try {
-    const result = await loginUser(req.body);
-    res.json(result);
+    const { user, message } = await loginUser(req.body);
+
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: message || 'Login exitoso',
+      data: {
+        token,
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          role: user.role_name,
+          camp_id: user.camp_id,
+        },
+      },
+    });
   } catch (err) {
-    res.status(401).json({ message: err.message });
+    res.status(401).json({
+      success: false,
+      message: err.message || 'Credenciales inválidas',
+    });
   }
 };
