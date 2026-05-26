@@ -8,10 +8,8 @@ import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// create admission (anyone can apply, no auth needed)
 router.post('/admissions', createAdmissionController);
 
-// see all admissions (only Admin and SuperAdmin)
 router.get(
   '/admissions',
   authenticate,
@@ -19,7 +17,6 @@ router.get(
   getAdmissionsController,
 );
 
-// approve admission (only Admin and SuperAdmin)
 router.put(
   '/admissions/:id/approve',
   authenticate,
@@ -27,7 +24,6 @@ router.put(
   approveAdmissionController,
 );
 
-// reject admission (only Admin and SuperAdmin)
 router.put(
   '/admissions/:id/reject',
   authenticate,

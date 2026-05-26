@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import { pool } from './config/db.js';
+
 import campRoutes from './routes/camp.routes.js';
 import admissionRoutes from './routes/admission.routes.js';
 import campRequestRoutes from './routes/campRequest.routes.js';
@@ -12,29 +15,54 @@ import authRoutes from './routes/auth.routes.js';
 
 const app = express();
 
-app.use(cors());
+app.use(helmet());
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.send('RUNNING SANCTUARY PROTOCOL BACKEND');
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: '🧟 Sanctuary Protocol Backend',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-app.get('/test-db', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT 1');
-    res.json({ message: 'DB connected', result: rows });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.use('/api/camps', campRoutes);
+app.use('/api/admissions', admissionRoutes);
+app.use('/api/camp-requests', campRequestRoutes);
+app.use('/api/persons', personRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/professions', professionRoutes);
+app.use('/api/auth', authRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint no encontrado' });
 });
 
-app.use('/api', campRoutes);
-app.use('/api', admissionRoutes);
-app.use('/api', campRequestRoutes);
-app.use('/api', personRoutes);
-app.use('/api', inventoryRoutes);
-app.use('/api', resourceRoutes);
-app.use('/api', professionRoutes);
-app.use('/api', authRoutes);
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err);
+  res.status(err.status || 500).json({
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Error interno del servidor'
+        : err.message,
+  });
+});
 
 export default app;

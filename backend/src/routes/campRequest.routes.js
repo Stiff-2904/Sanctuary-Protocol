@@ -10,7 +10,6 @@ import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// create camp request (only SuperAdmin and ExpeditionManager)
 router.post(
   '/camp-requests',
   authenticate,
@@ -18,7 +17,6 @@ router.post(
   createCampRequestController,
 );
 
-// add resources to camp request (only SuperAdmin and ExpeditionManager)
 router.post(
   '/camp-requests/:id/resources',
   authenticate,
@@ -26,7 +24,6 @@ router.post(
   addResourceController,
 );
 
-// add persons to camp request (only SuperAdmin and ExpeditionManager)
 router.post(
   '/camp-requests/:id/persons',
   authenticate,
@@ -34,7 +31,6 @@ router.post(
   addPersonController,
 );
 
-// approve
 router.put(
   '/camp-requests/:id/approve',
   authenticate,
@@ -42,7 +38,6 @@ router.put(
   approveCampRequestController,
 );
 
-// reject
 router.put(
   '/camp-requests/:id/reject',
   authenticate,
@@ -50,7 +45,6 @@ router.put(
   rejectCampRequestController,
 );
 
-// see all
 router.get(
   '/camp-requests',
   authenticate,

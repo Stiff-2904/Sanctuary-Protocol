@@ -8,7 +8,6 @@ import { authorizeRoles } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// Ver todas las personas (Admin y SuperAdmin)
 router.get(
   '/persons',
   authenticate,
@@ -16,7 +15,6 @@ router.get(
   getPersonsController,
 );
 
-// Ver persona por ID (Admin y SuperAdmin)
 router.get(
   '/persons/:id',
   authenticate,
@@ -24,7 +22,6 @@ router.get(
   getPersonByIdController,
 );
 
-// Crear persona (Admin y SuperAdmin)
 router.post(
   '/persons',
   authenticate,
@@ -32,7 +29,6 @@ router.post(
   createPersonController,
 );
 
-// Actualizar persona (Admin y SuperAdmin)
 router.put(
   '/persons/:id',
   authenticate,

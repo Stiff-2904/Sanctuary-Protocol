@@ -8,7 +8,6 @@ import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// SEE ALL INVENTORY
 router.get(
   '/inventory',
   authenticate,
@@ -16,7 +15,6 @@ router.get(
   getInventoryController,
 );
 
-// SEE INVENTORY BY CAMP (for Worker and ResourceManager)
 router.get(
   '/inventory/me',
   authenticate,
@@ -24,7 +22,6 @@ router.get(
   getInventoryByCampController,
 );
 
-// ADD INVENTORY (for ResourceManager and SuperAdmin)
 router.post(
   '/inventory',
   authenticate,
@@ -32,7 +29,6 @@ router.post(
   addInventoryController,
 );
 
-// UPDATE INVENTORY
 router.put(
   '/inventory/:id',
   authenticate,

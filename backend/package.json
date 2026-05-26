@@ -1,22 +1,29 @@
 {
-  "name": "backend",
+  "name": "sanctuary-protocol-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend API para Sanctuary Protocol",
+  "main": "src/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.20.0"
+    "morgan": "^1.10.1",
+    "mysql2": "^3.20.0",
+    "opena": "^0.1.19",
+    "openai": "^4.104.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
