@@ -1,34 +1,29 @@
 import { Router } from 'express';
-import { createAdmissionController } from '../controllers/admission.controller.js';
-import { approveAdmissionController } from '../controllers/admission.controller.js';
-import { getAdmissionsController } from '../controllers/admission.controller.js';
-import { rejectAdmissionController } from '../controllers/admission.controller.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
-import { authorizeRoles } from '../middlewares/role.middleware.js';
+import {
+  createAdmission,
+  decideAdmission,
+  getAllAdmissions,
+  getAdmissionById,
+} from '../controllers/admission.controller.js';
+import {
+  authenticate,
+  authorizeRoles,
+} from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.post('/admissions', createAdmissionController);
+router.use(authenticate);
 
-router.get(
-  '/admissions',
-  authenticate,
-  authorizeRoles('SuperAdmin', 'Admin'),
-  getAdmissionsController,
-);
+router.post('/', createAdmission);
 
-router.put(
-  '/admissions/:id/approve',
-  authenticate,
-  authorizeRoles('SuperAdmin', 'Admin'),
-  approveAdmissionController,
-);
+router.get('/', authorizeRoles('admin', 'system_admin'), getAllAdmissions);
 
-router.put(
-  '/admissions/:id/reject',
-  authenticate,
-  authorizeRoles('SuperAdmin', 'Admin'),
-  rejectAdmissionController,
+router.get('/:id', getAdmissionById);
+
+router.patch(
+  '/:id/decide',
+  authorizeRoles('admin', 'system_admin'),
+  decideAdmission,
 );
 
 export default router;

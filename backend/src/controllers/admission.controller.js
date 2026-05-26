@@ -1,80 +1,167 @@
-import { createAdmission } from '../models/admission.model.js';
-import { approveAdmission } from '../models/admission.model.js';
-import { getAdmissions } from '../models/admission.model.js';
-import { rejectAdmission } from '../models/admission.model.js';
+import { pool } from '../config/db.js';
+import { evaluateAdmission, assignProfession } from '../services/ai.service.js';
 
-export const createAdmissionController = async (req, res) => {
+export const createAdmission = async (req, res) => {
+  const connection = await pool.getConnection();
+
   try {
-    const { person_id, camp_id, skills } = req.body;
+    await connection.beginTransaction();
 
-    // validation
-    if (!person_id || !camp_id) {
-      return res.status(400).json({
-        message: 'person_id and camp_id are required',
-      });
-    }
-
-    if (!skills || skills.trim() === '') {
-      return res.status(400).json({
-        message: 'skills are required',
-      });
-    }
-
-    const admission = await createAdmission({
-      person_id,
-      camp_id,
+    const {
+      name,
+      age,
+      health_status,
       skills,
+      experience,
+      physical_condition,
+      medical_history,
+      reason,
+      image_url,
+      id_card_number,
+    } = req.body;
+
+    const aiEvaluation = await evaluateAdmission({
+      name,
+      age,
+      health_status,
+      skills,
+      experience,
+      physical_condition,
+      medical_history,
+      reason,
     });
 
-    res.status(201).json(admission);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error creating admission',
-      error: error.message,
+    const profession = assignProfession(
+      {
+        skills,
+        experience,
+      },
+      aiEvaluation.suggested_profession,
+    );
+
+    const [admissionResult] = await connection.query(
+      `INSERT INTO admissions (
+        name, age, health_status, skills, experience, 
+        physical_condition, medical_history, reason,
+        image_url, id_card_number,
+        ai_decision, ai_confidence, ai_suggested_profession,
+        ai_reasons, ai_risks, ai_recommendations,
+        status, evaluated_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())`,
+      [
+        name,
+        age,
+        health_status,
+        skills,
+        experience,
+        physical_condition,
+        medical_history,
+        reason,
+        image_url,
+        id_card_number,
+        aiEvaluation.admitted,
+        aiEvaluation.confidence,
+        profession,
+        JSON.stringify(aiEvaluation.reasons),
+        JSON.stringify(aiEvaluation.risks),
+        JSON.stringify(aiEvaluation.recommendations),
+      ],
+    );
+
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: 'Solicitud de admisión evaluada',
+      data: {
+        admission_id: admissionResult.insertId,
+        ai_evaluation: aiEvaluation,
+        assigned_profession: profession,
+        requires_approval: true,
+      },
     });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error en admisión:', error);
+    res.status(500).json({
+      error: 'Error al procesar admisión',
+      details: error.message,
+    });
+  } finally {
+    connection.release();
   }
 };
 
-export const approveAdmissionController = async (req, res) => {
+export const decideAdmission = async (req, res) => {
+  const { id } = req.params;
+  const { decision, override_reason } = req.body;
+
   try {
-    const { id } = req.params;
+    const [rows] = await pool.query('SELECT * FROM admissions WHERE id = ?', [
+      id,
+    ]);
 
-    const approved_by = req.user?.user_id;
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Admisión no encontrada' });
+    }
 
-    const result = await approveAdmission(id, approved_by);
+    const admission = rows[0];
 
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error approving admission',
-      error: error.message,
+    await pool.query(
+      `UPDATE admissions 
+       SET status = ?, decided_at = NOW(), override_reason = ?
+       WHERE id = ?`,
+      [decision === 'approved' ? 'approved' : 'rejected', override_reason, id],
+    );
+
+    if (decision === 'approved') {
+      const campId = req.user.campId;
+
+      const [profRows] = await pool.query(
+        'SELECT id FROM professions WHERE name = ?',
+        [admission.ai_suggested_profession],
+      );
+
+      let professionId;
+      if (profRows.length > 0) {
+        professionId = profRows[0].id;
+      } else {
+        const [newProf] = await pool.query(
+          'INSERT INTO professions (name, description) VALUES (?, ?)',
+          [
+            admission.ai_suggested_profession,
+            'Asignada automáticamente por IA',
+          ],
+        );
+        professionId = newProf.insertId;
+      }
+
+      await pool.query(
+        `INSERT INTO persons (
+          camp_id, name, age, health_status, profession_id,
+          status, id_card_number, created_at
+        ) VALUES (?, ?, ?, ?, ?, 'active', ?, NOW())`,
+        [
+          campId,
+          admission.name,
+          admission.age,
+          admission.health_status,
+          professionId,
+          admission.id_card_number,
+        ],
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Admisión ${decision === 'approved' ? 'aprobada' : 'rechazada'}`,
+      data: { admission_id: id },
     });
-  }
-};
-
-export const getAdmissionsController = async (req, res) => {
-  try {
-    const admissions = await getAdmissions();
-    res.json(admissions);
   } catch (error) {
+    console.error('Error al decidir admisión:', error);
     res.status(500).json({
-      message: 'Error fetching admissions',
-      error: error.message,
-    });
-  }
-};
-
-export const rejectAdmissionController = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await rejectAdmission(id);
-
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error rejecting admission',
-      error: error.message,
+      error: 'Error al procesar decisión',
+      details: error.message,
     });
   }
 };

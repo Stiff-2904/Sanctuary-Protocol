@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { pool } from './config/db.js';
+import { checkSessionTimeout } from './middlewares/sessionTimeout.middleware.js';
 
 import campRoutes from './routes/camp.routes.js';
 import admissionRoutes from './routes/admission.routes.js';
@@ -14,7 +15,7 @@ import professionRoutes from './routes/profession.routes.js';
 import authRoutes from './routes/auth.routes.js';
 
 const app = express();
-
+app.use('/api', checkSessionTimeout);
 app.use(helmet());
 
 if (process.env.NODE_ENV !== 'production') {

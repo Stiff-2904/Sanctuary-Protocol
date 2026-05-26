@@ -1,44 +1,51 @@
-import { verifyToken, isSessionActive } from '../utils/jwt.js';
+import { verifyToken } from '../utils/jwt.js';
+import { pool } from '../config/db.js';
 
-const SESSION_TIMEOUT_MSG =
-  'Sesión expirada por inactividad. Por favor, inicia sesión nuevamente.';
-
-export const authenticate = (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'No token provided' });
+      return res
+        .status(401)
+        .json({ error: 'No se proporcionó token de autenticación' });
     }
 
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
 
-    if (!isSessionActive(decoded)) {
-      return res.status(401).json({ message: SESSION_TIMEOUT_MSG });
+    const [rows] = await pool.query(
+      'SELECT * FROM users WHERE id = ? AND status = "active"',
+      [decoded.id],
+    );
+
+    if (rows.length === 0) {
+      return res
+        .status(401)
+        .json({ error: 'Usuario no encontrado o inactivo' });
     }
 
-    req.user = { ...decoded, lastActivity: Date.now() };
+    req.user = {
+      id: decoded.id,
+      username: decoded.username,
+      role: decoded.role,
+      campId: decoded.campId,
+    };
 
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expirado' });
+      return res.status(401).json({ error: 'Token expirado' });
     }
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(403).json({ message: 'Token inválido' });
-    }
-    return res
-      .status(500)
-      .json({ message: 'Error de autenticación', error: error.message });
+    return res.status(401).json({ error: 'Token inválido' });
   }
 };
 
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        message: 'Acceso denegado: No tienes los permisos necesarios',
+        error: 'No tiene permisos para realizar esta acción',
       });
     }
     next();
