@@ -12,38 +12,58 @@ export const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
     const decoded = verifyToken(token);
 
     const [rows] = await pool.query(
-      'SELECT * FROM users WHERE id = ? AND status = "active"',
-      [decoded.id],
+      `SELECT ua.*, p.camp_id, sr.name AS role_name
+       FROM user_account ua
+       LEFT JOIN person p ON ua.person_id = p.person_id
+       LEFT JOIN system_role sr ON ua.role_id = sr.role_id
+       WHERE ua.user_id = ?`,
+      [decoded.user_id],
     );
 
     if (rows.length === 0) {
+      console.warn('Usuario no encontrado en BD:', decoded.user_id);
       return res
         .status(401)
         .json({ error: 'Usuario no encontrado o inactivo' });
     }
 
-    req.user = {
-      id: decoded.id,
-      username: decoded.username,
-      role: decoded.role,
-      campId: decoded.campId,
-    };
+    const dbUser = rows[0];
 
+    req.user = {
+      id: dbUser.user_id,
+      user_id: dbUser.user_id,
+      username: dbUser.username,
+      role_id: dbUser.role_id,
+      role: dbUser.role_name,
+      campId: dbUser.camp_id || decoded.camp_id || null,
+    };
     next();
   } catch (error) {
+    console.error('Error en authenticate:', error.name, error.message);
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expirado' });
     }
-    return res.status(401).json({ error: 'Token inválido' });
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    return res.status(401).json({ error: 'Sesión inválida o expirada' });
   }
 };
 
-export const authorizeRoles = (...roles) => {
+export const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    const userRole = req.user?.role_id;
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         error: 'No tiene permisos para realizar esta acción',
       });

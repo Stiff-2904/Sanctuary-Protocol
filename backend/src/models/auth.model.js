@@ -2,7 +2,6 @@ import { pool } from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../utils/jwt.js';
 
-// REGISTER
 export const registerUser = async ({
   username,
   password,
@@ -36,26 +35,41 @@ export const registerUser = async ({
   return { user_id: result.insertId };
 };
 
-// LOGIN
 export const loginUser = async ({ username, password }) => {
   username = username?.trim().toLowerCase();
-  password = password?.trim();
 
   const [rows] = await pool.query(
     `SELECT u.*, r.name AS role_name, p.camp_id
-   FROM user_account u
-   JOIN system_role r ON u.role_id = r.role_id
-   LEFT JOIN person p ON u.person_id = p.person_id
-   WHERE u.username = ?`,
+     FROM user_account u
+     LEFT JOIN system_role r ON u.role_id = r.role_id
+     LEFT JOIN person p ON u.person_id = p.person_id
+     WHERE LOWER(u.username) = ?`,
     [username],
   );
 
-  const user = rows[0];
+  console.log('Rows encontrados:', rows.length);
 
-  if (!user) throw new Error('Invalid credentials');
+  if (rows.length === 0) {
+    console.error('Usuario NO encontrado en BD');
+    throw new Error('Invalid credentials');
+  }
+
+  const user = rows[0];
+  console.log('Usuario encontrado:', {
+    user_id: user.user_id,
+    username: user.username,
+    role_id: user.role_id,
+    role_name: user.role_name,
+    has_password: !!user.password,
+    password_preview: user.password?.substring(0, 20) + '...',
+  });
 
   const match = await bcrypt.compare(password, user.password);
-  if (!match) throw new Error('Invalid credentials');
+
+  if (!match) {
+    console.error('Password NO coincide');
+    throw new Error('Invalid credentials');
+  }
 
   const token = generateToken(user);
 
@@ -67,5 +81,6 @@ export const loginUser = async ({ username, password }) => {
       role: user.role_name,
       camp_id: user.camp_id,
     },
+    message: 'Login exitoso',
   };
 };

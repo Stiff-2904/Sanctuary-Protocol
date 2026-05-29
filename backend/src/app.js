@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { pool } from './config/db.js';
 import { checkSessionTimeout } from './middlewares/sessionTimeout.middleware.js';
+import { authenticate } from './middlewares/auth.middleware.js';
 
+import iaRoutes from './routes/ia.routes.js';
+import authRoutes from './routes/auth.routes.js';
 import campRoutes from './routes/camp.routes.js';
 import admissionRoutes from './routes/admission.routes.js';
 import campRequestRoutes from './routes/campRequest.routes.js';
@@ -12,15 +14,15 @@ import personRoutes from './routes/person.routes.js';
 import inventoryRoutes from './routes/inventory.routes.js';
 import resourceRoutes from './routes/resource.routes.js';
 import professionRoutes from './routes/profession.routes.js';
-import authRoutes from './routes/auth.routes.js';
 
 const app = express();
-app.use('/api', checkSessionTimeout);
+
 app.use(helmet());
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
+
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
@@ -43,15 +45,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.use('/api/camps', campRoutes);
-app.use('/api/admissions', admissionRoutes);
-app.use('/api/camp-requests', campRequestRoutes);
-app.use('/api/persons', personRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/resources', resourceRoutes);
-app.use('/api/professions', professionRoutes);
 app.use('/api/auth', authRoutes);
-
+app.use('/api/admissions', authenticate, checkSessionTimeout, admissionRoutes);
+app.use(
+  '/api/camp-requests',
+  authenticate,
+  checkSessionTimeout,
+  campRequestRoutes,
+);
+app.use('/api/persons', authenticate, checkSessionTimeout, personRoutes);
+app.use('/api/inventory', authenticate, checkSessionTimeout, inventoryRoutes);
+app.use('/api/resources', authenticate, checkSessionTimeout, resourceRoutes);
+app.use(
+  '/api/professions',
+  authenticate,
+  checkSessionTimeout,
+  professionRoutes,
+);
+app.use('/api/ia', authenticate, checkSessionTimeout, iaRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint no encontrado' });
 });

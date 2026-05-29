@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
-import app from './app.js';
-import { pool } from './config/db.js';
 
 dotenv.config();
+
+import app from './app.js';
+import { pool } from './config/db.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -25,7 +26,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Sanctuary Protocol Backend corriendo en puerto ${PORT}`);
-  console.log(`📦 Entorno: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗄️  DB: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+  console.log(`Sanctuary Protocol Backend corriendo en puerto ${PORT}`);
+  console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`DB: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
 });

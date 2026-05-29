@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 const SECRET = process.env.JWT_SECRET || 'dev_secret';
-const SESSION_TIMEOUT = 20 * 60 * 1000;
+const SESSION_TIMEOUT = '20m';
 
 export const generateToken = (user) => {
   return jwt.sign(
@@ -13,7 +13,7 @@ export const generateToken = (user) => {
       lastActivity: Date.now(),
     },
     SECRET,
-    { expiresIn: '24h' },
+    { expiresIn: SESSION_TIMEOUT },
   );
 };
 

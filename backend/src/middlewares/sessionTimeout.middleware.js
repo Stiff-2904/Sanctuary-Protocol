@@ -1,34 +1,26 @@
 export const checkSessionTimeout = (req, res, next) => {
-  const AUTH_HEADER = req.headers.authorization;
-
-  if (!AUTH_HEADER) {
+  console.log('checkSessionTimeout:', {
+    hasUser: !!req.user?.id,
+    userId: req.user?.id,
+    lastActivity: req.user?.lastActivity,
+    now: Date.now(),
+    diff: req.user?.lastActivity ? Date.now() - req.user.lastActivity : 'N/A',
+  });
+  if (!req.user?.id) {
     return next();
   }
 
-  try {
-    const token = AUTH_HEADER.split(' ')[1];
-    const decoded = require('jsonwebtoken').verify(
-      token,
-      process.env.JWT_SECRET,
-    );
+  const now = Date.now();
+  const TIMEOUT_MS = 20 * 60 * 1000;
 
-    if (decoded.lastActivity) {
-      const lastActivity = new Date(decoded.lastActivity);
-      const now = new Date();
-      const diffMinutes = (now - lastActivity) / 1000 / 60;
+  const lastActivity =
+    req.user?.lastActivity || parseInt(req.headers['x-last-activity']) || now;
 
-      if (diffMinutes > 20) {
-        return res.status(401).json({
-          error: 'Sesión expirada por inactividad',
-          message: 'Por favor, inicie sesión nuevamente',
-        });
-      }
-    }
-
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      error: 'Sesión inválida o expirada',
-    });
+  if (now - lastActivity > TIMEOUT_MS) {
+    console.warn(`Sesión expirada para usuario ${req.user.id}`);
+    return res.status(401).json({ error: 'Sesión inválida o expirada' });
   }
+
+  res.setHeader('X-Last-Activity', now.toString());
+  next();
 };
