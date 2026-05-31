@@ -74,7 +74,10 @@ const login = useCallback(async (username: string, password: string) => {
 
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.data.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data.user));
-  }, []);
+    navigate("/dashboard");
+
+    
+  }, [navigate]);
 
   return (
     <AuthContext.Provider

@@ -1,72 +1,152 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Recursos from "./pages/Recursos";
-import Personas from "./pages/Personas";
-import Exploraciones from "./pages/Exploraciones";
-import Solicitudes from "./pages/Solicitudes";
+import CampSelector from "./pages/CampSelector";
+import SuperAdminDashboard from "./pages/dashboards/SuperAdminDashboard";
+import AdminDashboard from "./pages/dashboards/AdminDashboard";
+import ResourceManagerDashboard from "./pages/dashboards/ResourceManagerDashboard";
+import ExpeditionManagerDashboard from "./pages/dashboards/ExpeditionManagerDashboard";
+import WorkerDashboard from "./pages/dashboards/WorkerDashboard";
+import Admission from "./pages/admission/Admission";
+import Inventory from "./pages/inventory/Inventory";
+import Expeditions from "./pages/expeditions/Expeditions";
+import Requests from "./pages/request/Request";
 import PrivateRoute from "./components/PrivateRoute";
+
+// Redirige al dashboard correcto según el rol
+function RoleRedirect() {
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  switch (user.role) {
+    case "SuperAdmin":
+      return <Navigate to="/camp-selector" replace />;
+    case "Admin":
+      return <Navigate to="/dashboard/admin" replace />;
+    case "ResourceManager":
+      return <Navigate to="/dashboard/resource-manager" replace />;
+    case "ExpeditionManager":
+      return <Navigate to="/dashboard/expedition-manager" replace />;
+    case "Worker":
+      return <Navigate to="/dashboard/worker" replace />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+}
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Rutas públicas */}
+          {/* Pública */}
           <Route path="/login" element={<Login />} />
 
-          {/* Todos los roles autenticados */}
+          {/* Redirección por rol luego del login */}
           <Route
             path="/dashboard"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <RoleRedirect />
               </PrivateRoute>
             }
           />
 
-          {/* Admin y SuperAdmin */}
+          {/* SuperAdmin */}
           <Route
-            path="/personas"
+            path="/camp-selector"
+            element={
+              <PrivateRoute allowedRoles={["SuperAdmin"]}>
+                <CampSelector />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/super-admin"
+            element={
+              <PrivateRoute allowedRoles={["SuperAdmin"]}>
+                <SuperAdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Admin */}
+          <Route
+            path="/dashboard/admin"
             element={
               <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
-                <Personas />
+                <AdminDashboard />
               </PrivateRoute>
             }
           />
 
-          {/* Worker, ResourceManager y SuperAdmin */}
+          {/* ResourceManager */}
           <Route
-            path="/recursos"
+            path="/dashboard/resource-manager"
+            element={
+              <PrivateRoute allowedRoles={["ResourceManager", "SuperAdmin"]}>
+                <ResourceManagerDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ExpeditionManager */}
+          <Route
+            path="/dashboard/expedition-manager"
+            element={
+              <PrivateRoute allowedRoles={["ExpeditionManager", "SuperAdmin"]}>
+                <ExpeditionManagerDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Worker */}
+          <Route
+            path="/dashboard/worker"
+            element={
+              <PrivateRoute allowedRoles={["Worker", "SuperAdmin"]}>
+                <WorkerDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Secciones */}
+          <Route
+            path="/admission"
+            element={
+              <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
+                <Admission />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/inventory"
             element={
               <PrivateRoute allowedRoles={["Worker", "ResourceManager", "SuperAdmin"]}>
-                <Recursos />
+                <Inventory />
               </PrivateRoute>
             }
           />
-
-          {/* ExpeditionManager y SuperAdmin */}
           <Route
-            path="/exploraciones"
+            path="/expeditions"
             element={
               <PrivateRoute allowedRoles={["ExpeditionManager", "SuperAdmin"]}>
-                <Exploraciones />
+                <Expeditions />
               </PrivateRoute>
             }
           />
-
-          {/* ExpeditionManager y SuperAdmin */}
           <Route
-            path="/solicitudes"
+            path="/requests"
             element={
               <PrivateRoute allowedRoles={["ExpeditionManager", "SuperAdmin"]}>
-                <Solicitudes />
+                <Requests />
               </PrivateRoute>
             }
           />
 
-          {/* Redirección por defecto */}
+          {/* Defaults */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
