@@ -24,7 +24,7 @@ export const loginController = async (req, res) => {
         user: {
           user_id: user.user_id,
           username: user.username,
-          role: user.role_name,
+          role: user.role,
           camp_id: user.camp_id,
         },
       },
