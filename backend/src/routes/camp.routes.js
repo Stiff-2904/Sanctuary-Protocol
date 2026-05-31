@@ -5,10 +5,7 @@ import { updateCampController } from '../controllers/camp.controller.js';
 
 const router = Router();
 
-router.get('/camps', getCampsController);
-
+router.get('/', getCampsController);
+router.post('/', createCampController);
+router.put('/:id', updateCampController);
 export default router;
-
-router.post('/camps', createCampController);
-
-router.put('/camps/:id', updateCampController);

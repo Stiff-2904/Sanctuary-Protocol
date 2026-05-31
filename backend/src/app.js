@@ -63,6 +63,7 @@ app.use(
   professionRoutes,
 );
 app.use('/api/ia', authenticate, checkSessionTimeout, iaRoutes);
+app.use('/api/camps', authenticate, checkSessionTimeout, campRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint no encontrado' });
 });

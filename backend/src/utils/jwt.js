@@ -8,7 +8,7 @@ export const generateToken = (user) => {
     {
       user_id: user.user_id,
       username: user.username,
-      role: user.role_name,
+      role: user.role,
       camp_id: user.camp_id || null,
       lastActivity: Date.now(),
     },

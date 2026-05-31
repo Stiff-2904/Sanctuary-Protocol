@@ -8,32 +8,9 @@ import { authorizeRoles } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.get(
-  '/persons',
-  authenticate,
-  authorizeRoles('Admin', 'SuperAdmin'),
-  getPersonsController,
-);
-
-router.get(
-  '/persons/:id',
-  authenticate,
-  authorizeRoles('Admin', 'SuperAdmin'),
-  getPersonByIdController,
-);
-
-router.post(
-  '/persons',
-  authenticate,
-  authorizeRoles('Admin', 'SuperAdmin'),
-  createPersonController,
-);
-
-router.put(
-  '/persons/:id',
-  authenticate,
-  authorizeRoles('Admin', 'SuperAdmin'),
-  updatePersonController,
-);
+router.get('/', authenticate, authorizeRoles('Admin', 'SuperAdmin'), getPersonsController);
+router.get('/:id', authenticate, authorizeRoles('Admin', 'SuperAdmin'), getPersonByIdController);
+router.post('/', authenticate, authorizeRoles('Admin', 'SuperAdmin'), createPersonController);
+router.put('/:id', authenticate, authorizeRoles('Admin', 'SuperAdmin'), updatePersonController);
 
 export default router;
