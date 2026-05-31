@@ -69,11 +69,11 @@ const login = useCallback(async (username: string, password: string) => {
     if (!response.ok) throw new Error("Credenciales inválidas");
 
     const data = await response.json();
-    setToken(data.token);
-    setUser(data.user);
+    setToken(data.data.token);
+    setUser(data.data.user);
 
-    localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)); 
+    localStorage.setItem(STORAGE_KEYS.TOKEN, data.data.token);
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data.user));
   }, []);
 
   return (
