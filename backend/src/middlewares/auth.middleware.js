@@ -43,7 +43,7 @@ export const authenticate = async (req, res, next) => {
       username: dbUser.username,
       role_id: dbUser.role_id,
       role: dbUser.role_name,
-      campId: dbUser.camp_id || decoded.camp_id || null,
+      camp_id: dbUser.camp_id || decoded.camp_id || null, // snake_case
     };
     next();
   } catch (error) {
@@ -62,7 +62,7 @@ export const authenticate = async (req, res, next) => {
 
 export const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
-    const userRole = req.user?.role;
+    const userRole = req.user?.role;  // usar role no role_id
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         error: 'No tiene permisos para realizar esta acción',

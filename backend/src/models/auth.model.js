@@ -56,13 +56,14 @@ export const loginUser = async ({ username, password }) => {
 
   const user = rows[0];
   console.log('Usuario encontrado:', {
-    user_id: user.user_id,
-    username: user.username,
-    role_id: user.role_id,
-    role_name: user.role_name,
-    has_password: !!user.password,
-    password_preview: user.password?.substring(0, 20) + '...',
-  });
+  user_id: user.user_id,
+  username: user.username,
+  role_id: user.role_id,
+  role_name: user.role_name,
+  camp_id: user.camp_id,  // agregar esta línea
+  has_password: !!user.password,
+  password_preview: user.password?.substring(0, 20) + '...',
+});
 
   const match = await bcrypt.compare(password, user.password);
 
