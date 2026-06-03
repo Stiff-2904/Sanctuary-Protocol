@@ -6,9 +6,9 @@ import { updateResourceController } from '../controllers/resource.controller.js'
 
 const router = Router();
 
-router.get('/resources', getResourcesController);
-router.get('/resources/:id', getResourceByIdController);
-router.post('/resources', createResourceController);
-router.put('/resources/:id', updateResourceController);
+router.get('/', getResourcesController);
+router.get('/:id', getResourceByIdController);
+router.post('/', createResourceController);
+router.put('/:id', updateResourceController);
 
 export default router;
