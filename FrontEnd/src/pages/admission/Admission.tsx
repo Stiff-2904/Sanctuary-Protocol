@@ -1,137 +1,397 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Users, UserCheck, UserX, Heart, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, UserCheck, UserX, Plus, X, Brain } from "lucide-react";
 import api from "../../services/api";
 
-interface Person {
-  person_id: number;
-  full_name: string;
-  profession_name: string;
-  status: string;
+interface Admission {
+  request_id: number;
+  name: string;
+  age: number;
   health_status: string;
+  status: string;
+  request_date: string;
 }
 
+interface AdmissionForm {
+  name: string;
+  age: string;
+  health_status: string;
+  skills: string[];
+  experience: string;
+  physical_condition: string;
+  medical_history: string;
+  reason: string;
+  camp_id: number;
+}
+
+const SKILLS_OPTIONS = [
+  "Medicina", "Construcción", "Combate", "Cocina",
+  "Mecánica", "Agricultura", "Comunicaciones", "Exploración"
+];
+
+const initialForm: AdmissionForm = {
+  name: "",
+  age: "",
+  health_status: "healthy",
+  skills: [],
+  experience: "",
+  physical_condition: "",
+  medical_history: "",
+  reason: "",
+  camp_id: 1,
+};
+
 export default function Admission() {
-  const [persons, setPersons] = useState<Person[]>([]);
+  const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<AdmissionForm>(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
 
   useEffect(() => {
-    api
-      .get("/persons")
-      .then((res) => setPersons(res.data))
-      .catch(() => setError("Error al cargar las personas"))
-      .finally(() => setLoading(false));
+    fetchAdmissions();
   }, []);
 
-  const statusColor: Record<string, string> = {
-    active: "#00ff41",
-    outside: "#ffaa00",
-    inactive: "#ff3333",
+  const fetchAdmissions = () => {
+    setLoading(true);
+    api
+      .get("/admissions")
+      .then((res) => setAdmissions(res.data.data ?? []))
+      .catch(() => setError("Error al cargar las solicitudes"))
+      .finally(() => setLoading(false));
   };
 
-  const healthColor: Record<string, string> = {
-    healthy: "#00ff41",
-    injured: "#ffaa00",
-    sick: "#ff3333",
+  const toggleSkill = (skill: string) => {
+    setForm((prev) => ({
+      ...prev,
+      skills: prev.skills.includes(skill)
+        ? prev.skills.filter((s) => s !== skill)
+        : [...prev.skills, skill],
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.age || !form.reason) {
+      alert("Nombre, edad y razón de ingreso son obligatorios");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await api.post("/admissions", {
+        ...form,
+        age: parseInt(form.age),
+      });
+      setAiResult(res.data.data);
+      fetchAdmissions();
+    } catch {
+      alert("Error al enviar la solicitud");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDecide = async (id: number, decision: "approved" | "rejected") => {
+    try {
+      await api.patch(`/admissions/${id}/decide`, {
+        final_decision: decision,
+        user_override_reason: decision === "approved" ? "Aprobado por admin" : "Rechazado por admin",
+      });
+      fetchAdmissions();
+    } catch {
+      alert("Error al registrar la decisión");
+    }
+  };
+
+  const statusColor: Record<string, string> = {
+    pending_ai_review: "#ffaa00",
+    approved: "#00ff41",
+    rejected: "#ff3333",
+  };
+
+  const statusLabel: Record<string, string> = {
+    pending_ai_review: "Pendiente revisión",
+    approved: "Aprobado",
+    rejected: "Rechazado",
   };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", padding: "2rem" }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 style={{ color: "#00ff41", fontFamily: "monospace", marginBottom: "2rem" }}>
-          👥 Gestión de Personas
-        </h1>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
-        {/* Estadísticas */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-            marginBottom: "2rem",
-          }}
-        >
-          <div style={{ background: "#1a1a1a", padding: "1rem", borderRadius: "8px", border: "1px solid #00ff41" }}>
-            <Users color="#00ff41" style={{ marginBottom: "0.5rem" }} />
-            <p style={{ color: "#888", fontSize: "0.9rem" }}>Total</p>
-            <p style={{ color: "#00ff41", fontSize: "1.5rem", fontFamily: "monospace" }}>
-              {persons.length}
-            </p>
-          </div>
-          <div style={{ background: "#1a1a1a", padding: "1rem", borderRadius: "8px", border: "1px solid #00ff41" }}>
-            <UserCheck color="#00ff41" style={{ marginBottom: "0.5rem" }} />
-            <p style={{ color: "#888", fontSize: "0.9rem" }}>Activos</p>
-            <p style={{ color: "#00ff41", fontSize: "1.5rem", fontFamily: "monospace" }}>
-              {persons.filter((p) => p.status === "active").length}
-            </p>
-          </div>
-          <div style={{ background: "#1a1a1a", padding: "1rem", borderRadius: "8px", border: "1px solid #ff3333" }}>
-            <UserX color="#ff3333" style={{ marginBottom: "0.5rem" }} />
-            <p style={{ color: "#888", fontSize: "0.9rem" }}>Enfermos/Heridos</p>
-            <p style={{ color: "#ff3333", fontSize: "1.5rem", fontFamily: "monospace" }}>
-              {persons.filter((p) => p.health_status !== "healthy").length}
-            </p>
-          </div>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+          <h1 style={{ color: "#00ff41", fontFamily: "monospace" }}>👥 Admisión de Personas</h1>
+          <button
+            onClick={() => { setShowForm(true); setAiResult(null); setForm(initialForm); }}
+            style={{
+              background: "#00ff41", color: "#0a0a0a", border: "none",
+              padding: "0.75rem 1.5rem", borderRadius: "8px", cursor: "pointer",
+              fontFamily: "monospace", fontWeight: "bold",
+              display: "flex", alignItems: "center", gap: "0.5rem"
+            }}
+          >
+            <Plus size={16} /> Nueva Solicitud
+          </button>
         </div>
 
-        {/* Lista */}
-        <div style={{ background: "#1a1a1a", borderRadius: "12px", padding: "1.5rem" }}>
-          <h2 style={{ color: "#e0e0e0", fontFamily: "monospace", marginBottom: "1rem" }}>
-            📋 Supervivientes del Campamento
-          </h2>
+        {/* Estadísticas */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+          {[
+            { label: "Total", value: admissions.length, color: "#00ff41", icon: <Users size={20} color="#00ff41" /> },
+            { label: "Aprobados", value: admissions.filter(a => a.status === "approved").length, color: "#00ff41", icon: <UserCheck size={20} color="#00ff41" /> },
+            { label: "Rechazados", value: admissions.filter(a => a.status === "rejected").length, color: "#ff3333", icon: <UserX size={20} color="#ff3333" /> },
+            { label: "Pendientes", value: admissions.filter(a => a.status === "pending_ai_review").length, color: "#ffaa00", icon: <Brain size={20} color="#ffaa00" /> },
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: "#1a1a1a", padding: "1rem", borderRadius: "8px", border: `1px solid ${stat.color}` }}>
+              {stat.icon}
+              <p style={{ color: "#888", fontSize: "0.9rem", marginTop: "0.5rem" }}>{stat.label}</p>
+              <p style={{ color: stat.color, fontSize: "1.5rem", fontFamily: "monospace" }}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
 
-          {loading && (
-            <p style={{ color: "#00ff41", fontFamily: "monospace" }}>Cargando personas...</p>
+        {/* Lista de solicitudes */}
+        <div style={{ background: "#1a1a1a", borderRadius: "12px", padding: "1.5rem", marginBottom: "2rem" }}>
+          <h2 style={{ color: "#e0e0e0", fontFamily: "monospace", marginBottom: "1rem" }}>📋 Solicitudes</h2>
+
+          {loading && <p style={{ color: "#00ff41", fontFamily: "monospace" }}>Cargando...</p>}
+          {error && <p style={{ color: "#ff3333", fontFamily: "monospace" }}>{error}</p>}
+          {!loading && !error && admissions.length === 0 && (
+            <p style={{ color: "#666", fontFamily: "monospace" }}>No hay solicitudes registradas.</p>
           )}
 
-          {error && (
-            <p style={{ color: "#ff3333", fontFamily: "monospace" }}>{error}</p>
-          )}
-
-          {!loading && !error && persons.length === 0 && (
-            <p style={{ color: "#666", fontFamily: "monospace" }}>
-              No hay personas registradas en este campamento.
-            </p>
-          )}
-
-          {persons.map((person, index) => (
+          {admissions.map((admission, index) => (
             <motion.div
-              key={person.person_id}
+              key={admission.request_id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.05 }}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "1rem",
-                borderBottom: "1px solid #333",
-                gap: "1rem",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "1rem", borderBottom: "1px solid #333", gap: "1rem", flexWrap: "wrap"
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <Shield size={20} color="#00ff41" />
-                <div>
-                  <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>{person.full_name}</p>
-                  <p style={{ color: "#888", fontSize: "0.8rem" }}>{person.profession_name}</p>
-                </div>
+              <div>
+                <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>{admission.name}</p>
+                <p style={{ color: "#888", fontSize: "0.8rem" }}>
+                  {admission.age} años — {new Date(admission.request_date).toLocaleDateString()}
+                </p>
               </div>
-              <div style={{ display: "flex", gap: "1rem" }}>
-                <span style={{ color: statusColor[person.status] ?? "#888", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                  ● {person.status}
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                <span style={{ color: statusColor[admission.status] ?? "#888", fontFamily: "monospace", fontSize: "0.8rem" }}>
+                  ● {statusLabel[admission.status] ?? admission.status}
                 </span>
-                <span style={{ color: healthColor[person.health_status] ?? "#888", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                  <Heart size={14} style={{ verticalAlign: "middle" }} /> {person.health_status}
-                </span>
+                {admission.status === "pending_ai_review" && (
+                  <>
+                    <button
+                      onClick={() => handleDecide(admission.request_id, "approved")}
+                      style={{ background: "transparent", border: "1px solid #00ff41", color: "#00ff41", padding: "0.25rem 0.75rem", borderRadius: "4px", cursor: "pointer", fontFamily: "monospace", fontSize: "0.8rem" }}
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() => handleDecide(admission.request_id, "rejected")}
+                      style={{ background: "transparent", border: "1px solid #ff3333", color: "#ff3333", padding: "0.25rem 0.75rem", borderRadius: "4px", cursor: "pointer", fontFamily: "monospace", fontSize: "0.8rem" }}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           ))}
         </div>
+
+        {/* Modal formulario */}
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 100, padding: "1rem"
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                style={{
+                  background: "#1a1a1a", border: "1px solid #00ff41",
+                  borderRadius: "12px", padding: "2rem",
+                  width: "100%", maxWidth: "600px", maxHeight: "90vh",
+                  overflowY: "auto"
+                }}
+              >
+                {/* Header modal */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                  <h2 style={{ color: "#00ff41", fontFamily: "monospace" }}>🧬 Nueva Solicitud de Admisión</h2>
+                  <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", color: "#888", cursor: "pointer" }}>
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Resultado IA */}
+                {aiResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: "#0a0a0a", border: `1px solid ${aiResult.ai_decision === "approved" ? "#00ff41" : "#ff3333"}`,
+                      borderRadius: "8px", padding: "1rem", marginBottom: "1.5rem"
+                    }}
+                  >
+                    <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginBottom: "0.5rem" }}>
+                      🤖 Evaluación de IA
+                    </p>
+                    <p style={{ color: aiResult.ai_decision === "approved" ? "#00ff41" : "#ff3333", fontFamily: "monospace", fontWeight: "bold" }}>
+                      Decisión: {aiResult.ai_decision === "approved" ? "✅ Aprobado" : "❌ Rechazado"}
+                    </p>
+                    <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.25rem" }}>
+                      Profesión sugerida: {aiResult.suggested_profession ?? "—"}
+                    </p>
+                    <button
+                      onClick={() => { setShowForm(false); setAiResult(null); }}
+                      style={{
+                        marginTop: "1rem", background: "#00ff41", color: "#0a0a0a",
+                        border: "none", padding: "0.5rem 1rem", borderRadius: "6px",
+                        cursor: "pointer", fontFamily: "monospace", fontWeight: "bold"
+                      }}
+                    >
+                      Ver en lista
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Formulario */}
+                {!aiResult && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    {/* Nombre */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Nombre completo *</label>
+                      <input
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Edad */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Edad *</label>
+                      <input
+                        type="number"
+                        value={form.age}
+                        onChange={(e) => setForm({ ...form, age: e.target.value })}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Estado de salud */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Estado de salud</label>
+                      <select
+                        value={form.health_status}
+                        onChange={(e) => setForm({ ...form, health_status: e.target.value })}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem" }}
+                      >
+                        <option value="healthy">Sano</option>
+                        <option value="injured">Herido</option>
+                        <option value="sick">Enfermo</option>
+                      </select>
+                    </div>
+
+                    {/* Habilidades */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Habilidades</label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        {SKILLS_OPTIONS.map((skill) => (
+                          <button
+                            key={skill}
+                            onClick={() => toggleSkill(skill)}
+                            style={{
+                              background: form.skills.includes(skill) ? "#00ff41" : "transparent",
+                              color: form.skills.includes(skill) ? "#0a0a0a" : "#00ff41",
+                              border: "1px solid #00ff41", borderRadius: "4px",
+                              padding: "0.25rem 0.75rem", cursor: "pointer",
+                              fontFamily: "monospace", fontSize: "0.8rem"
+                            }}
+                          >
+                            {skill}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Experiencia */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Experiencia</label>
+                      <textarea
+                        value={form.experience}
+                        onChange={(e) => setForm({ ...form, experience: e.target.value })}
+                        rows={2}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", resize: "vertical", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Condición física */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Condición física</label>
+                      <input
+                        value={form.physical_condition}
+                        onChange={(e) => setForm({ ...form, physical_condition: e.target.value })}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Historial médico */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Historial médico</label>
+                      <textarea
+                        value={form.medical_history}
+                        onChange={(e) => setForm({ ...form, medical_history: e.target.value })}
+                        rows={2}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", resize: "vertical", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Razón de ingreso */}
+                    <div>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Razón de ingreso *</label>
+                      <textarea
+                        value={form.reason}
+                        onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                        rows={3}
+                        style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", resize: "vertical", boxSizing: "border-box" }}
+                      />
+                    </div>
+
+                    {/* Botón enviar */}
+                    <button
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                      style={{
+                        background: submitting ? "#333" : "#00ff41",
+                        color: "#0a0a0a", border: "none", padding: "0.75rem",
+                        borderRadius: "8px", cursor: submitting ? "not-allowed" : "pointer",
+                        fontFamily: "monospace", fontWeight: "bold", fontSize: "1rem",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem"
+                      }}
+                    >
+                      <Brain size={18} />
+                      {submitting ? "Evaluando con IA..." : "Enviar a evaluación de IA"}
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
