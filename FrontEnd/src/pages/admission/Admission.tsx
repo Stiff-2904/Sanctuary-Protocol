@@ -236,15 +236,15 @@ export default function Admission() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      background: "#0a0a0a", border: `1px solid ${aiResult.ai_decision === "approved" ? "#00ff41" : "#ff3333"}`,
+                      background: "#0a0a0a", border: `1px solid ${aiResult.ai_decision === "approved" || aiResult.ai_decision === "APROBADO" ? "#00ff41" : "#ff3333"}`,
                       borderRadius: "8px", padding: "1rem", marginBottom: "1.5rem"
                     }}
                   >
                     <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginBottom: "0.5rem" }}>
                       🤖 Evaluación de IA
                     </p>
-                    <p style={{ color: aiResult.ai_decision === "approved" ? "#00ff41" : "#ff3333", fontFamily: "monospace", fontWeight: "bold" }}>
-                      Decisión: {aiResult.ai_decision === "approved" ? "✅ Aprobado" : "❌ Rechazado"}
+                    <p style={{ color: aiResult.ai_decision === "approved" || aiResult.ai_decision === "APROBADO" ? "#00ff41" : "#ff3333", fontFamily: "monospace", fontWeight: "bold" }}>
+                      Decisión: {aiResult.ai_decision === "approved" || aiResult.ai_decision === "APROBADO" ? "✅ Aprobado" : "❌ Rechazado"}
                     </p>
                     <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.25rem" }}>
                       Profesión sugerida: {aiResult.suggested_profession ?? "—"}
@@ -256,7 +256,7 @@ export default function Admission() {
                       onClick={() => { setShowForm(false); setAiResult(null); }}
                       style={{
                         marginTop: "1rem", background: "#00ff41", color: "#0a0a0a",
-                        border: "none", padding: "0.5rem 1rem", borderRadius: "6px",
+                        border: `1px solid ${(aiResult.ai_decision === "approved" || aiResult.ai_decision === "APROBADO") ? "#00ff41" : "#ff3333"}`,
                         cursor: "pointer", fontFamily: "monospace", fontWeight: "bold"
                       }}
                     >
