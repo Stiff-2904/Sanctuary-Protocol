@@ -19,21 +19,16 @@ export const getInventoryController = async (req, res) => {
 // GET INVENTORY DEL CAMP DEL USUARIO
 export const getInventoryByCampController = async (req, res) => {
   try {
-    const camp_id = req.user.camp_id;
+    const camp_id = req.user.camp_id || req.query.camp_id;
 
     if (!camp_id) {
-      return res.status(400).json({
-        message: 'User has no assigned camp',
-      });
+      return res.status(400).json({ message: 'No camp assigned' });
     }
 
     const data = await getInventoryByCamp(camp_id);
     res.json(data);
   } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching camp inventory',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error fetching camp inventory', error: error.message });
   }
 };
 
