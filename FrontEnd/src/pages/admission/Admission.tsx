@@ -6,15 +6,14 @@ import api from "../../services/api";
 interface Admission {
   request_id: number;
   name: string;
-  age: number;
-  health_status: string;
+  birth_date: string;
   status: string;
   request_date: string;
 }
 
 interface AdmissionForm {
   name: string;
-  age: string;
+  birth_date: string;
   health_status: string;
   skills: string[];
   experience: string;
@@ -31,7 +30,7 @@ const SKILLS_OPTIONS = [
 
 const initialForm: AdmissionForm = {
   name: "",
-  age: "",
+  birth_date: "",
   health_status: "healthy",
   skills: [],
   experience: "",
@@ -73,16 +72,13 @@ export default function Admission() {
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.age || !form.reason) {
-      alert("Nombre, edad y razón de ingreso son obligatorios");
+    if (!form.name || !form.birth_date || !form.reason) {
+      alert("Nombre, fecha de nacimiento y razón de ingreso son obligatorios");
       return;
     }
     setSubmitting(true);
     try {
-      const res = await api.post("/admissions", {
-        ...form,
-        age: parseInt(form.age),
-      });
+      const res = await api.post("/admissions", form);
       setAiResult(res.data.data);
       fetchAdmissions();
     } catch {
@@ -176,7 +172,7 @@ export default function Admission() {
               <div>
                 <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>{admission.name}</p>
                 <p style={{ color: "#888", fontSize: "0.8rem" }}>
-                  {admission.age} años — {new Date(admission.request_date).toLocaleDateString()}
+                  {new Date(admission.birth_date).toLocaleDateString()} — {new Date(admission.request_date).toLocaleDateString()}
                 </p>
               </div>
               <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
@@ -228,7 +224,6 @@ export default function Admission() {
                   overflowY: "auto"
                 }}
               >
-                {/* Header modal */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
                   <h2 style={{ color: "#00ff41", fontFamily: "monospace" }}>🧬 Nueva Solicitud de Admisión</h2>
                   <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", color: "#888", cursor: "pointer" }}>
@@ -236,7 +231,6 @@ export default function Admission() {
                   </button>
                 </div>
 
-                {/* Resultado IA */}
                 {aiResult && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -255,6 +249,9 @@ export default function Admission() {
                     <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.25rem" }}>
                       Profesión sugerida: {aiResult.suggested_profession ?? "—"}
                     </p>
+                    <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginTop: "0.25rem" }}>
+                      Razonamiento: {aiResult.ai_reasoning ?? "—"}
+                    </p>
                     <button
                       onClick={() => { setShowForm(false); setAiResult(null); }}
                       style={{
@@ -268,10 +265,8 @@ export default function Admission() {
                   </motion.div>
                 )}
 
-                {/* Formulario */}
                 {!aiResult && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                    {/* Nombre */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Nombre completo *</label>
                       <input
@@ -281,18 +276,16 @@ export default function Admission() {
                       />
                     </div>
 
-                    {/* Edad */}
                     <div>
-                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Edad *</label>
+                      <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Fecha de nacimiento *</label>
                       <input
-                        type="number"
-                        value={form.age}
-                        onChange={(e) => setForm({ ...form, age: e.target.value })}
+                        type="date"
+                        value={form.birth_date}
+                        onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
                         style={{ width: "100%", background: "#0a0a0a", border: "1px solid #333", borderRadius: "6px", padding: "0.5rem", color: "#e0e0e0", fontFamily: "monospace", marginTop: "0.25rem", boxSizing: "border-box" }}
                       />
                     </div>
 
-                    {/* Estado de salud */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Estado de salud</label>
                       <select
@@ -306,7 +299,6 @@ export default function Admission() {
                       </select>
                     </div>
 
-                    {/* Habilidades */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Habilidades</label>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
@@ -328,7 +320,6 @@ export default function Admission() {
                       </div>
                     </div>
 
-                    {/* Experiencia */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Experiencia</label>
                       <textarea
@@ -339,7 +330,6 @@ export default function Admission() {
                       />
                     </div>
 
-                    {/* Condición física */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Condición física</label>
                       <input
@@ -349,7 +339,6 @@ export default function Admission() {
                       />
                     </div>
 
-                    {/* Historial médico */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Historial médico</label>
                       <textarea
@@ -360,7 +349,6 @@ export default function Admission() {
                       />
                     </div>
 
-                    {/* Razón de ingreso */}
                     <div>
                       <label style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>Razón de ingreso *</label>
                       <textarea
@@ -371,7 +359,6 @@ export default function Admission() {
                       />
                     </div>
 
-                    {/* Botón enviar */}
                     <button
                       onClick={handleSubmit}
                       disabled={submitting}
