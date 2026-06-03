@@ -28,6 +28,13 @@ export default function SuperAdminDashboard() {
     { label: "Solicitudes pendientes", value: "—", color: "#00aaff" },
   ];
 
+  const modules = [
+    { label: "Admisión de Personas", path: "/admission", color: "#00ff41", emoji: "👥" },
+    { label: "Inventario", path: "/inventory", color: "#ffaa00", emoji: "📦" },
+    { label: "Solicitudes", path: "/requests", color: "#00aaff", emoji: "📡" },
+    { label: "Expediciones", path: "/expeditions", color: "#008f11", emoji: "🗺️" },
+  ];
+
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
       {/* Header */}
@@ -131,24 +138,38 @@ export default function SuperAdminDashboard() {
             ))}
           </div>
 
-          {/* Botón al dashboard completo */}
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            onClick={() => navigate("/dashboard/admin")}
+          {/* Módulos */}
+          <h3 style={{ color: "#e0e0e0", fontFamily: "monospace", marginBottom: "1rem" }}>
+            🗂️ Módulos del sistema
+          </h3>
+          <div
             style={{
-              background: "#00ff41",
-              color: "#0a0a0a",
-              border: "none",
-              padding: "1rem 2rem",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "1rem",
-              fontWeight: "bold",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "1rem",
             }}
           >
-            Ir al panel de gestión →
-          </motion.button>
+            {modules.map((item) => (
+              <motion.div
+                key={item.path}
+                whileHover={{ scale: 1.03, boxShadow: `0 0 20px ${item.color}44` }}
+                onClick={() => navigate(item.path)}
+                style={{
+                  background: "#1a1a1a",
+                  border: `1px solid ${item.color}`,
+                  borderRadius: "12px",
+                  padding: "1.5rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem",
+                }}
+              >
+                <span style={{ fontSize: "2rem" }}>{item.emoji}</span>
+                <h3 style={{ color: item.color, fontFamily: "monospace" }}>{item.label}</h3>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </main>
     </div>
