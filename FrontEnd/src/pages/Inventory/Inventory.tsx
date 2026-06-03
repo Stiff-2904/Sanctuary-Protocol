@@ -18,8 +18,11 @@ export default function Inventory() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const savedCamp = localStorage.getItem("selected_camp");
+    const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
+
     api
-      .get("/inventory/me")
+      .get(`/inventory/me${campId ? `?camp_id=${campId}` : ""}`)
       .then((res) => setItems(res.data))
       .catch(() => setError("Error al cargar el inventario"))
       .finally(() => setLoading(false));

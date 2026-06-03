@@ -256,7 +256,7 @@ export default function Admission() {
                       onClick={() => { setShowForm(false); setAiResult(null); }}
                       style={{
                         marginTop: "1rem", background: "#00ff41", color: "#0a0a0a",
-                        border: `1px solid ${(aiResult.ai_decision === "approved" || aiResult.ai_decision === "APROBADO") ? "#00ff41" : "#ff3333"}`,
+                        border: "none", padding: "0.5rem 1rem", borderRadius: "6px",
                         cursor: "pointer", fontFamily: "monospace", fontWeight: "bold"
                       }}
                     >
