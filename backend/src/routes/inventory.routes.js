@@ -10,7 +10,7 @@ const router = Router();
 
 router.get('/', authenticate, authorizeRoles('SuperAdmin'), getInventoryController);
 
-router.get('/me', authenticate, authorizeRoles('Worker', 'ResourceManager', 'SuperAdmin'), getInventoryByCampController);
+router.get('/me', authenticate, authorizeRoles('Worker', 'ResourceManager', 'ExpeditionManager', 'SuperAdmin'), getInventoryByCampController);
 
 router.post('/', authenticate, authorizeRoles('SuperAdmin', 'ResourceManager'), addInventoryController);
 

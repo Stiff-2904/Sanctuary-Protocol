@@ -12,14 +12,14 @@ const router = Router();
 
 router.get('/', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), getCampRequestsController);
 
-router.post('/', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), createCampRequestController);
+router.post('/', authenticate, authorizeRoles('ExpeditionManager'), createCampRequestController);
 
-router.post('/:id/resources', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), addResourceController);
+router.post('/:id/resources', authenticate, authorizeRoles('ExpeditionManager'), addResourceController);
 
-router.post('/:id/persons', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), addPersonController);
+router.post('/:id/persons', authenticate, authorizeRoles('ExpeditionManager'), addPersonController);
 
-router.put('/:id/approve', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), approveCampRequestController);
+router.put('/:id/approve', authenticate, authorizeRoles('SuperAdmin'), approveCampRequestController);
 
-router.put('/:id/reject', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), rejectCampRequestController);
+router.put('/:id/reject', authenticate, authorizeRoles('SuperAdmin'), rejectCampRequestController);
 
 export default router;

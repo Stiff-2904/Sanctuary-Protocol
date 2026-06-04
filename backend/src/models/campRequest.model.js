@@ -102,11 +102,11 @@ export const approveCampRequest = async (request_id) => {
       [target_camp_id],
     );
 
-    if (!sourceCamp.length || sourceCamp[0].status !== 'Active') {
+    if (!sourceCamp.length || sourceCamp[0].status !== 'activo') {
       throw new Error('Source camp is not active');
     }
 
-    if (!targetCamp.length || targetCamp[0].status !== 'Active') {
+    if (!targetCamp.length || targetCamp[0].status !== 'activo') {
       throw new Error('Target camp is not active');
     }
 

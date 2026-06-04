@@ -7,7 +7,7 @@ import { getCampRequests } from '../models/campRequest.model.js';
 
 export const createCampRequestController = async (req, res) => {
   try {
-    const { target_camp_id, description } = req.body;
+    const { target_camp_id, type } = req.body;
 
     const source_camp_id = req.user.camp_id;
 
@@ -26,7 +26,7 @@ export const createCampRequestController = async (req, res) => {
     const result = await createCampRequest({
       source_camp_id,
       target_camp_id,
-      description,
+      type,
     });
 
     res.status(201).json(result);
