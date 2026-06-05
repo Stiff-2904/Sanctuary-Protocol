@@ -15,6 +15,7 @@ import inventoryRoutes from './routes/inventory.routes.js';
 import resourceRoutes from './routes/resource.routes.js';
 import professionRoutes from './routes/profession.routes.js';
 import explorationRoutes from './routes/exploration.routes.js';
+import metricsRoutes from './routes/metrics.routes.js';
 
 const app = express();
 
@@ -70,6 +71,8 @@ app.use(
   checkSessionTimeout,
   explorationRoutes,
 );
+
+app.use('/api/metrics', authenticate, checkSessionTimeout, metricsRoutes);
 
 app.use('/api/ia', authenticate, checkSessionTimeout, iaRoutes);
 app.use('/api/camps', authenticate, checkSessionTimeout, campRoutes);
