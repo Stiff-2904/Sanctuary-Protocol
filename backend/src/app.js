@@ -14,6 +14,7 @@ import personRoutes from './routes/person.routes.js';
 import inventoryRoutes from './routes/inventory.routes.js';
 import resourceRoutes from './routes/resource.routes.js';
 import professionRoutes from './routes/profession.routes.js';
+import explorationRoutes from './routes/exploration.routes.js';
 
 const app = express();
 
@@ -62,6 +63,14 @@ app.use(
   checkSessionTimeout,
   professionRoutes,
 );
+
+app.use(
+  '/api/explorations',
+  authenticate,
+  checkSessionTimeout,
+  explorationRoutes,
+);
+
 app.use('/api/ia', authenticate, checkSessionTimeout, iaRoutes);
 app.use('/api/camps', authenticate, checkSessionTimeout, campRoutes);
 app.use((req, res) => {
