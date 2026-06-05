@@ -2,6 +2,7 @@ import { getPersons } from '../models/person.model.js';
 import { getPersonById } from '../models/person.model.js';
 import { createPerson } from '../models/person.model.js';
 import { updatePerson } from '../models/person.model.js';
+import { updateHealthStatus } from '../models/person.model.js';
 
 export const getPersonsController = async (req, res) => {
   try {
@@ -48,6 +49,22 @@ export const updatePersonController = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: 'Error updating person',
+      error: error.message,
+    });
+  }
+};
+
+export const updateHealthStatusController = async (req, res) => {
+  try {
+    const result = await updateHealthStatus(
+      req.params.id,
+      req.body.health_status,
+    );
+
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({
+      message: 'Error updating health status',
       error: error.message,
     });
   }
