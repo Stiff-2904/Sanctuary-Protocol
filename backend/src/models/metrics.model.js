@@ -8,32 +8,32 @@ export const getDashboardMetrics = async () => {
   `);
 
   const [[healthyPersons]] = await pool.query(`
-  SELECT COUNT(*) AS total
-  FROM person
-  WHERE status = 'active'
-    AND health_status = 'healthy'
-`);
+    SELECT COUNT(*) AS total
+    FROM person
+    WHERE status = 'active'
+      AND health_status = 'healthy'
+  `);
 
   const [[injuredPersons]] = await pool.query(`
-  SELECT COUNT(*) AS total
-  FROM person
-  WHERE status = 'active'
-    AND health_status = 'injured'
-`);
+    SELECT COUNT(*) AS total
+    FROM person
+    WHERE status = 'active'
+      AND health_status = 'injured'
+  `);
 
   const [[sickPersons]] = await pool.query(`
-  SELECT COUNT(*) AS total
-  FROM person
-  WHERE status = 'active'
-    AND health_status = 'sick'
-`);
+    SELECT COUNT(*) AS total
+    FROM person
+    WHERE status = 'active'
+      AND health_status = 'sick'
+  `);
 
   const [[awayPersons]] = await pool.query(`
-  SELECT COUNT(*) AS total
-  FROM person
-  WHERE status = 'active'
-    AND health_status = 'away'
-`);
+    SELECT COUNT(*) AS total
+    FROM person
+    WHERE status = 'active'
+      AND health_status = 'away'
+  `);
 
   const [[pendingAdmissions]] = await pool.query(`
     SELECT COUNT(*) AS total
@@ -58,6 +58,12 @@ export const getDashboardMetrics = async () => {
     FROM inventory
   `);
 
+  const [[criticalInventory]] = await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM inventory
+    WHERE quantity < minimum_quantity
+  `);
+
   return {
     active_persons: activePersons.total,
     healthy_persons: healthyPersons.total,
@@ -68,5 +74,6 @@ export const getDashboardMetrics = async () => {
     active_explorations: activeExplorations.total,
     active_camps: activeCamps.total,
     total_resources: Number(resources.total),
+    critical_inventory: criticalInventory.total,
   };
 };

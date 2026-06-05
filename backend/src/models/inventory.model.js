@@ -74,3 +74,24 @@ export const updateInventory = async (id, { quantity }, userCamp) => {
 
   return { message: 'Inventory updated' };
 };
+
+// GET CRITICAL INVENTORY ALERTS
+export const getInventoryAlerts = async () => {
+  const [rows] = await pool.query(`
+    SELECT
+      i.inventory_id,
+      i.camp_id,
+      c.name AS camp_name,
+      i.resource_id,
+      r.name AS resource_name,
+      i.quantity,
+      i.minimum_quantity
+    FROM inventory i
+    JOIN camp c ON i.camp_id = c.camp_id
+    JOIN resource r ON i.resource_id = r.resource_id
+    WHERE i.quantity < i.minimum_quantity
+    ORDER BY i.camp_id, r.name
+  `);
+
+  return rows;
+};

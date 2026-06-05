@@ -2,6 +2,7 @@ import { getInventory } from '../models/inventory.model.js';
 import { getInventoryByCamp } from '../models/inventory.model.js';
 import { addInventory } from '../models/inventory.model.js';
 import { updateInventory } from '../models/inventory.model.js';
+import { getInventoryAlerts } from '../models/inventory.model.js';
 
 // GET ALL
 export const getInventoryController = async (req, res) => {
@@ -28,7 +29,9 @@ export const getInventoryByCampController = async (req, res) => {
     const data = await getInventoryByCamp(camp_id);
     res.json(data);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching camp inventory', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching camp inventory', error: error.message });
   }
 };
 
@@ -53,6 +56,20 @@ export const updateInventoryController = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: 'Error updating inventory',
+      error: error.message,
+    });
+  }
+};
+
+// GET INVENTORY ALERTS
+export const getInventoryAlertsController = async (req, res) => {
+  try {
+    const data = await getInventoryAlerts();
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching inventory alerts',
       error: error.message,
     });
   }

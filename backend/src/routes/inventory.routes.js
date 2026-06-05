@@ -5,15 +5,48 @@ import { addInventoryController } from '../controllers/inventory.controller.js';
 import { updateInventoryController } from '../controllers/inventory.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
+import { getInventoryAlertsController } from '../controllers/inventory.controller.js';
 
 const router = Router();
 
-router.get('/', authenticate, authorizeRoles('SuperAdmin'), getInventoryController);
+router.get(
+  '/',
+  authenticate,
+  authorizeRoles('SuperAdmin'),
+  getInventoryController,
+);
 
-router.get('/me', authenticate, authorizeRoles('Worker', 'ResourceManager', 'ExpeditionManager', 'SuperAdmin'), getInventoryByCampController);
+router.get(
+  '/me',
+  authenticate,
+  authorizeRoles(
+    'Worker',
+    'ResourceManager',
+    'ExpeditionManager',
+    'SuperAdmin',
+  ),
+  getInventoryByCampController,
+);
 
-router.post('/', authenticate, authorizeRoles('SuperAdmin', 'ResourceManager'), addInventoryController);
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ResourceManager'),
+  addInventoryController,
+);
 
-router.put('/:id', authenticate, authorizeRoles('SuperAdmin', 'ResourceManager', 'Worker'), updateInventoryController);
+router.put(
+  '/:id',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ResourceManager', 'Worker'),
+  updateInventoryController,
+);
+
+router.get(
+  '/alerts',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ResourceManager', 'Admin'),
+  getInventoryAlertsController,
+);
 
 export default router;
