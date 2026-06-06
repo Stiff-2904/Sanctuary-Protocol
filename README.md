@@ -200,9 +200,17 @@ GET    /api/camp-requests
 
 - Resource transfer requests
 - Personnel transfer requests
-- Approval workflow
+- Dual approval workflow
 - Inventory updates
 - Movement tracking
+- Transfer validation before execution
+
+### Approval Flow
+
+1. Source camp approval (`source_approved`)
+2. Target camp approval (`target_approved`)
+3. Transfer execution
+4. Request status changes to `approved`
 
 ---
 
@@ -269,6 +277,15 @@ PATCH  /api/temporary-assignments/:id/end
 - Assignment history
 - Workforce flexibility
 
+### Workflow
+
+1. Worker receives a temporary profession assignment
+2. Original profession is stored
+3. Profession changes immediately
+4. Assignment remains active until closed
+5. Original profession is restored automatically
+6. Assignment history remains available
+
 ---
 
 ## Daily Production & Consumption
@@ -313,6 +330,12 @@ Every active person consumes:
 ---
 
 ## Alerts System
+
+### Endpoints
+
+```http
+GET /api/metrics/alerts
+```
 
 ### Features
 
@@ -373,10 +396,13 @@ Implemented:
 - Alerts System
 - Temporary Worker Reassignment
 - Daily Production & Consumption
-
-Pending:
-
 - Dual Approval Workflow for Camp Transfers
+
+Project Status:
+
+- Backend implementation completed
+- Ready for frontend integration
+- All core project requirements implemented
 
 ---
 
