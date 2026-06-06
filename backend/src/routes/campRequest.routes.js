@@ -10,16 +10,52 @@ import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-router.get('/', authenticate, authorizeRoles('SuperAdmin', 'ExpeditionManager'), getCampRequestsController);
+// GET ALL REQUESTS
+router.get(
+  '/',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ExpeditionManager'),
+  getCampRequestsController,
+);
 
-router.post('/', authenticate, authorizeRoles('ExpeditionManager'), createCampRequestController);
+// CREATE REQUEST
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ExpeditionManager'),
+  createCampRequestController,
+);
 
-router.post('/:id/resources', authenticate, authorizeRoles('ExpeditionManager'), addResourceController);
+// ADD RESOURCE TO REQUEST
+router.post(
+  '/:id/resources',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ExpeditionManager'),
+  addResourceController,
+);
 
-router.post('/:id/persons', authenticate, authorizeRoles('ExpeditionManager'), addPersonController);
+// ADD PERSON TO REQUEST
+router.post(
+  '/:id/persons',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ExpeditionManager'),
+  addPersonController,
+);
 
-router.put('/:id/approve', authenticate, authorizeRoles('SuperAdmin'), approveCampRequestController);
+// APPROVE REQUEST
+router.put(
+  '/:id/approve',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'Admin', 'ExpeditionManager'),
+  approveCampRequestController,
+);
 
-router.put('/:id/reject', authenticate, authorizeRoles('SuperAdmin'), rejectCampRequestController);
+// REJECT REQUEST
+router.put(
+  '/:id/reject',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'Admin', 'ExpeditionManager'),
+  rejectCampRequestController,
+);
 
 export default router;

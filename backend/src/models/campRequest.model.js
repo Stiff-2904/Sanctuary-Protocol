@@ -86,10 +86,45 @@ export const approveCampRequest = async (request_id) => {
     const request = rows[0];
 
     if (!request) throw new Error('Request not found');
-    if (request.status !== 'pending')
-      throw new Error('Request already processed');
 
-    const { source_camp_id, target_camp_id } = request;
+    if (request.status === 'approved') {
+      throw new Error('Request already approved');
+    }
+
+    if (request.status === 'rejected') {
+      throw new Error('Request already rejected');
+    }
+
+    const { source_camp_id, target_camp_id, source_approved, target_approved } =
+      request;
+
+    if (!source_approved) {
+      await connection.query(
+        `
+    UPDATE camp_request
+    SET source_approved = TRUE
+    WHERE request_id = ?
+    `,
+        [request_id],
+      );
+
+      await connection.commit();
+
+      return {
+        message: 'Source camp approved. Waiting for target camp approval.',
+      };
+    }
+
+    if (!target_approved) {
+      await connection.query(
+        `
+    UPDATE camp_request
+    SET target_approved = TRUE
+    WHERE request_id = ?
+    `,
+        [request_id],
+      );
+    }
 
     // 2. VALIDATE CAMPS
     const [sourceCamp] = await connection.query(
