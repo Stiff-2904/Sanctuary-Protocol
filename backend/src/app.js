@@ -17,6 +17,7 @@ import professionRoutes from './routes/profession.routes.js';
 import explorationRoutes from './routes/exploration.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
 import temporaryAssignmentRoutes from './routes/temporaryAssignment.routes.js';
+import productionRoutes from './routes/production.routes.js';
 
 const app = express();
 
@@ -65,6 +66,8 @@ app.use(
   checkSessionTimeout,
   professionRoutes,
 );
+
+app.use('/api/production', authenticate, checkSessionTimeout, productionRoutes);
 
 app.use(
   '/api/explorations',
