@@ -6,6 +6,23 @@ export const getCamps = async () => {
 };
 
 export const createCamp = async ({ name, location, status }) => {
+  name = name?.trim();
+  location = location?.trim();
+  status = status?.trim();
+
+  if (!name || !location || !status) {
+    throw new Error('Name, location and status are required');
+  }
+
+  const [exists] = await pool.query(
+    'SELECT * FROM camp WHERE LOWER(name) = LOWER(?)',
+    [name],
+  );
+
+  if (exists.length > 0) {
+    throw new Error('Camp already exists');
+  }
+
   const [result] = await pool.query(
     'INSERT INTO camp (name, location, status) VALUES (?, ?, ?)',
     [name, location, status],
@@ -20,10 +37,48 @@ export const createCamp = async ({ name, location, status }) => {
 };
 
 export const updateCamp = async (id, { name, location, status }) => {
+  const [rows] = await pool.query('SELECT * FROM camp WHERE camp_id = ?', [id]);
+
+  if (rows.length === 0) {
+    throw new Error('Camp not found');
+  }
+
+  if (name) {
+    name = name.trim();
+
+    const [exists] = await pool.query(
+      `SELECT *
+       FROM camp
+       WHERE LOWER(name) = LOWER(?)
+       AND camp_id != ?`,
+      [name, id],
+    );
+
+    if (exists.length > 0) {
+      throw new Error('Camp already exists');
+    }
+  }
+
   await pool.query(
-    'UPDATE camp SET name = ?, location = ?, status = ? WHERE camp_id = ?',
+    `UPDATE camp
+     SET name = COALESCE(?, name),
+         location = COALESCE(?, location),
+         status = COALESCE(?, status)
+     WHERE camp_id = ?`,
     [name, location, status, id],
   );
 
-  return { camp_id: id, name, location, status };
+  return {
+    message: 'Camp updated',
+  };
+};
+
+export const getCampById = async (id) => {
+  const [rows] = await pool.query('SELECT * FROM camp WHERE camp_id = ?', [id]);
+
+  if (rows.length === 0) {
+    throw new Error('Camp not found');
+  }
+
+  return rows[0];
 };

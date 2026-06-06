@@ -1,6 +1,7 @@
 import { getCamps } from '../models/camp.model.js';
 import { createCamp } from '../models/camp.model.js';
 import { updateCamp } from '../models/camp.model.js';
+import { getCampById } from '../models/camp.model.js';
 
 export const getCampsController = async (req, res) => {
   try {
@@ -10,6 +11,17 @@ export const getCampsController = async (req, res) => {
     res.status(500).json({
       message: 'Error to get camps',
       error: error.message,
+    });
+  }
+};
+
+export const getCampByIdController = async (req, res) => {
+  try {
+    const camp = await getCampById(req.params.id);
+    res.json(camp);
+  } catch (error) {
+    res.status(404).json({
+      message: error.message,
     });
   }
 };
