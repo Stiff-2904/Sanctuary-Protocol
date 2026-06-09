@@ -6,13 +6,11 @@ import { updateHealthStatus } from '../models/person.model.js';
 
 export const getPersonsController = async (req, res) => {
   try {
-    const persons = await getPersons();
+    const camp_id = req.user.camp_id || req.query.camp_id;
+    const persons = await getPersons(camp_id);
     res.json(persons);
   } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching persons',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error fetching persons', error: error.message });
   }
 };
 

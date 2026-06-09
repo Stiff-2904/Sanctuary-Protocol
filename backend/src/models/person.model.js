@@ -1,6 +1,10 @@
 import { pool } from '../config/db.js';
 
-export const getPersons = async () => {
+export const getPersons = async (camp_id) => {
+  if (camp_id) {
+    const [rows] = await pool.query('SELECT * FROM person WHERE camp_id = ?', [camp_id]);
+    return rows;
+  }
   const [rows] = await pool.query('SELECT * FROM person');
   return rows;
 };
