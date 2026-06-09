@@ -28,6 +28,9 @@ const SKILLS_OPTIONS = [
   "Mecánica", "Agricultura", "Comunicaciones", "Exploración"
 ];
 
+const savedCamp = localStorage.getItem("selected_camp");
+const campId = savedCamp ? JSON.parse(savedCamp).camp_id : 1;
+
 const initialForm: AdmissionForm = {
   name: "",
   birth_date: "",
@@ -37,7 +40,7 @@ const initialForm: AdmissionForm = {
   physical_condition: "",
   medical_history: "",
   reason: "",
-  camp_id: 1,
+  camp_id: campId,
 };
 
 export default function Admission() {
@@ -53,14 +56,16 @@ export default function Admission() {
     fetchAdmissions();
   }, []);
 
-  const fetchAdmissions = () => {
-    setLoading(true);
-    api
-      .get("/admissions")
-      .then((res) => setAdmissions(res.data.data ?? []))
-      .catch(() => setError("Error al cargar las solicitudes"))
-      .finally(() => setLoading(false));
-  };
+const fetchAdmissions = () => {
+  setLoading(true);
+  const savedCamp = localStorage.getItem("selected_camp");
+  const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
+  api
+    .get(`/admissions${campId ? `?camp_id=${campId}` : ""}`)
+    .then((res) => setAdmissions(res.data.data ?? []))
+    .catch(() => setError("Error al cargar las solicitudes"))
+    .finally(() => setLoading(false));
+};
 
   const toggleSkill = (skill: string) => {
     setForm((prev) => ({
