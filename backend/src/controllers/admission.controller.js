@@ -4,12 +4,23 @@ import { auditLogRepository } from '../repositories/auditLog.repository.js';
 
 export const getAllAdmissions = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT ar.*, ae.ai_result, ae.justification, ae.suggested_profession
-       FROM admission_request ar
-       LEFT JOIN admission_evaluation ae ON ar.request_id = ae.request_id
-       ORDER BY ar.request_date DESC`
-    );
+    const camp_id = req.user.camp_id || req.query.camp_id;
+
+    let query = `
+      SELECT ar.*, ae.ai_result, ae.justification, ae.suggested_profession
+      FROM admission_request ar
+      LEFT JOIN admission_evaluation ae ON ar.request_id = ae.request_id
+    `;
+    const params = [];
+
+    if (camp_id) {
+      query += ` WHERE ar.camp_id = ?`;
+      params.push(camp_id);
+    }
+
+    query += ` ORDER BY ar.request_date DESC`;
+
+    const [rows] = await pool.query(query, params);
     res.json({ success: true, data: rows });
   } catch (error) {
     console.error('Error fetching admissions:', error);
