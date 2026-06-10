@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto';
-import pool from '../config/db.js';
+import { pool } from '../config/db.js';
 
 export const auditLogRepository = {
-  async create(data) {
+  async create(data, connection = null) {
     const id = randomUUID();
+    const db = connection || pool;
 
     const campId =
       data.camp_id ||
@@ -48,12 +49,11 @@ export const auditLogRepository = {
     ];
 
     try {
-      const [result] = await pool.query(query, values);
+      const [result] = await db.query(query, values);
       return {
         id,
         success: true,
-        affectedRows:
-          'affectedRows' in result ? result.affectedRows : undefined,
+        affectedRows: 'affectedRows' in result ? result.affectedRows : undefined,
       };
     } catch (error) {
       console.error('Error guardando auditoría IA:', error.code, error.message);
@@ -119,18 +119,10 @@ export const auditLogRepository = {
 
     try {
       const [rows] = await pool.query(query, [campId]);
-      return (
-        rows[0] || { total: 0, approved: 0, overrides: 0, avg_confidence: 0 }
-      );
+      return rows[0] || { total: 0, approved: 0, overrides: 0, avg_confidence: 0 };
     } catch (error) {
       console.error('Error en estadísticas:', error.message);
-      return {
-        total: 0,
-        approved: 0,
-        overrides: 0,
-        avg_confidence: 0,
-        error: true,
-      };
+      return { total: 0, approved: 0, overrides: 0, avg_confidence: 0, error: true };
     }
   },
 };

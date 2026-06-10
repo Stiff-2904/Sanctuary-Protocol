@@ -113,7 +113,7 @@ export const createAdmission = async (req, res) => {
       user_override: false,
       camp_id: camp_id || 1,
       evaluated_at: new Date(),
-    });
+    }, connection);
 
     // 5. Guardar evaluación
     await connection.query(
