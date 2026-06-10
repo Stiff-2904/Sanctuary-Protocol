@@ -48,7 +48,7 @@ export default function Expeditions() {
 
   const fetchExplorations = () => {
     setLoading(true);
-    api.get("/explorations")
+    api.get(`/explorations${campId ? `?camp_id=${campId}` : ""}`)
       .then((res) => setExplorations(res.data))
       .catch(() => setError("Error al cargar las expediciones"))
       .finally(() => setLoading(false));

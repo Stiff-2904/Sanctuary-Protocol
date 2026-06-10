@@ -17,8 +17,6 @@ import {
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface CampRequest {
   request_id: number;
   source_camp_id: number;
@@ -55,8 +53,6 @@ interface ResourceLine {
   available: number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const STATUS_CONFIG = {
   pending: { color: "#ffaa00", icon: Clock, label: "Pendiente" },
   approved: { color: "#00ff41", icon: CheckCircle, label: "Aprobada" },
@@ -71,8 +67,6 @@ const formatDate = (dateStr: string) => {
     year: "numeric",
   });
 };
-
-// ─── New Request Modal ────────────────────────────────────────────────────────
 
 function NewRequestModal({
   camps,
@@ -93,13 +87,16 @@ function NewRequestModal({
   const [loadingResources, setLoadingResources] = useState(false);
   const [error, setError] = useState("");
 
+  const savedCamp = localStorage.getItem("selected_camp");
+  const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
+
   useEffect(() => {
     const fetchData = async () => {
       setLoadingResources(true);
       try {
         const [resRes, invRes] = await Promise.all([
           api.get("/resources"),
-          api.get("/inventory/me"),
+          api.get(`/inventory/me${campId ? `?camp_id=${campId}` : ""}`),
         ]);
         setResources(resRes.data);
         setInventory(invRes.data);
@@ -173,6 +170,7 @@ function NewRequestModal({
       const res = await api.post("/camp-requests", {
         target_camp_id: Number(targetCampId),
         type: "resources",
+        source_camp_id: campId,
       });
       const requestId = res.data.request_id;
 
@@ -453,8 +451,6 @@ function NewRequestModal({
   );
 }
 
-// ─── Request Row ──────────────────────────────────────────────────────────────
-
 function RequestRow({
   req,
   onApprove,
@@ -556,8 +552,6 @@ function RequestRow({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function Requests() {
   const { user } = useAuth();
   const [requests, setRequests] = useState<CampRequest[]>([]);
@@ -568,10 +562,13 @@ export default function Requests() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [actionError, setActionError] = useState("");
 
+  const savedCamp = localStorage.getItem("selected_camp");
+  const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
+
   const fetchRequests = async () => {
     try {
       setError("");
-      const res = await api.get("/camp-requests");
+      const res = await api.get(`/camp-requests${campId ? `?camp_id=${campId}` : ""}`);
       setRequests(res.data);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -632,7 +629,6 @@ export default function Requests() {
     <div style={{ minHeight: "100vh", background: "#0a0a0a", padding: "2rem" }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <Radio size={26} color="#4da6ff" />
@@ -647,7 +643,7 @@ export default function Requests() {
             >
               <RefreshCw size={14} /> Actualizar
             </button>
-            {user?.role === "ExpeditionManager" && (
+            {(user?.role === "ExpeditionManager" || user?.role === "SuperAdmin") && (
               <button
                 onClick={() => setShowModal(true)}
                 style={{ padding: "0.6rem 1.2rem", background: "rgba(77,166,255,0.12)", border: "1px solid #4da6ff", borderRadius: "6px", color: "#4da6ff", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: "monospace", fontSize: "0.85rem" }}
@@ -658,7 +654,6 @@ export default function Requests() {
           </div>
         </div>
 
-        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "1.75rem" }}>
           {[
             { key: "all", label: "Total", color: "#4da6ff" },
@@ -687,7 +682,6 @@ export default function Requests() {
           ))}
         </div>
 
-        {/* Action error */}
         <AnimatePresence>
           {actionError && (
             <motion.div
@@ -699,7 +693,6 @@ export default function Requests() {
           )}
         </AnimatePresence>
 
-        {/* List */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "3rem", color: "#555", fontFamily: "monospace" }}>
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} style={{ display: "inline-block", marginBottom: "1rem" }}>
