@@ -137,11 +137,11 @@ export const approveCampRequest = async (request_id) => {
       [target_camp_id],
     );
 
-    if (!sourceCamp.length || sourceCamp[0].status !== 'activo') {
+    if (!sourceCamp.length || sourceCamp[0].status !== 'active') {
       throw new Error('Source camp is not active');
     }
 
-    if (!targetCamp.length || targetCamp[0].status !== 'activo') {
+    if (!targetCamp.length || targetCamp[0].status !== 'active') {
       throw new Error('Target camp is not active');
     }
 
@@ -162,19 +162,18 @@ export const approveCampRequest = async (request_id) => {
     }
 
     // 5. VALIDATE RESOURCES
-    // El target es quien tiene los recursos (el que recibió la solicitud y va a enviarlos)
     for (const r of resources) {
       const [inventoryRows] = await connection.query(
         `SELECT quantity FROM inventory 
          WHERE camp_id = ? AND resource_id = ?`,
-        [target_camp_id, r.resource_id],
+        [source_camp_id, r.resource_id],
       );
 
       const availableQty = Number(inventoryRows[0]?.quantity);
       const requestedQty = Number(r.quantity);
 
       if (!inventoryRows.length || availableQty < requestedQty) {
-        throw new Error(`Not enough resource ${r.resource_id} in target camp`);
+        throw new Error(`Not enough resource ${r.resource_id}`);
       }
     }
 
@@ -186,7 +185,7 @@ export const approveCampRequest = async (request_id) => {
          AND status = 'active'
          AND profession_id = ?
          LIMIT ?`,
-        [target_camp_id, p.profession_id, p.quantity],
+        [source_camp_id, p.profession_id, p.quantity],
       );
 
       if (available.length < p.quantity) {
@@ -195,27 +194,26 @@ export const approveCampRequest = async (request_id) => {
     }
 
     // 7. EXECUTE RESOURCES
-    // Descontar del target (quien los tenía) y agregar al source (quien los pidió)
     for (const r of resources) {
       await connection.query(
         `UPDATE inventory 
          SET quantity = quantity - ?
          WHERE camp_id = ? AND resource_id = ? AND quantity >= ?`,
-        [r.quantity, target_camp_id, r.resource_id, r.quantity],
+        [r.quantity, source_camp_id, r.resource_id, r.quantity],
       );
 
       await connection.query(
         `INSERT INTO inventory (camp_id, resource_id, quantity)
          VALUES (?, ?, ?)
          ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
-        [source_camp_id, r.resource_id, r.quantity, r.quantity],
+        [target_camp_id, r.resource_id, r.quantity, r.quantity],
       );
 
       await connection.query(
         `INSERT INTO resource_movement 
          (resource_id, source_camp_id, target_camp_id, quantity, movement_date)
          VALUES (?, ?, ?, ?, CURDATE())`,
-        [r.resource_id, target_camp_id, source_camp_id, r.quantity],
+        [r.resource_id, source_camp_id, target_camp_id, r.quantity],
       );
     }
 
@@ -227,20 +225,20 @@ export const approveCampRequest = async (request_id) => {
          AND status = 'active'
          AND profession_id = ?
          LIMIT ?`,
-        [target_camp_id, p.profession_id, p.quantity],
+        [source_camp_id, p.profession_id, p.quantity],
       );
 
       for (const person of available) {
         await connection.query(
           `UPDATE person SET camp_id = ? WHERE person_id = ?`,
-          [source_camp_id, person.person_id],
+          [target_camp_id, person.person_id],
         );
 
         await connection.query(
           `INSERT INTO person_movement 
            (person_id, source_camp_id, target_camp_id, movement_date)
            VALUES (?, ?, ?, CURDATE())`,
-          [person.person_id, target_camp_id, source_camp_id],
+          [person.person_id, source_camp_id, target_camp_id],
         );
       }
     }
