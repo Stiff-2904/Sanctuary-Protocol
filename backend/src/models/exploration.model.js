@@ -1,14 +1,23 @@
 import { pool } from '../config/db.js';
 
 // GET ALL EXPLORATIONS
-export const getExplorations = async () => {
+export const getExplorations = async (camp_id) => {
+  if (camp_id) {
+    const [rows] = await pool.query(`
+      SELECT e.*, c.name AS camp_name
+      FROM exploration e
+      JOIN camp c ON e.camp_id = c.camp_id
+      WHERE e.camp_id = ?
+      ORDER BY e.exploration_id DESC
+    `, [camp_id]);
+    return rows;
+  }
   const [rows] = await pool.query(`
     SELECT e.*, c.name AS camp_name
     FROM exploration e
     JOIN camp c ON e.camp_id = c.camp_id
     ORDER BY e.exploration_id DESC
   `);
-
   return rows;
 };
 

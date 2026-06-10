@@ -282,15 +282,26 @@ export const rejectCampRequest = async (request_id) => {
 };
 
 // GET ALL REQUESTS
-export const getCampRequests = async () => {
+export const getCampRequests = async (camp_id) => {
+  if (camp_id) {
+    const [rows] = await pool.query(`
+      SELECT cr.*, 
+          c1.name AS source_camp,
+          c2.name AS target_camp
+      FROM camp_request cr
+      JOIN camp c1 ON cr.source_camp_id = c1.camp_id
+      JOIN camp c2 ON cr.target_camp_id = c2.camp_id
+      WHERE cr.source_camp_id = ? OR cr.target_camp_id = ?
+    `, [camp_id, camp_id]);
+    return rows;
+  }
   const [rows] = await pool.query(`
     SELECT cr.*, 
-           c1.name AS source_camp,
-           c2.name AS target_camp
+        c1.name AS source_camp,
+        c2.name AS target_camp
     FROM camp_request cr
     JOIN camp c1 ON cr.source_camp_id = c1.camp_id
     JOIN camp c2 ON cr.target_camp_id = c2.camp_id
   `);
-
   return rows;
 };

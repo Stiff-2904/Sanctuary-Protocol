@@ -96,12 +96,10 @@ export const rejectCampRequestController = async (req, res) => {
 
 export const getCampRequestsController = async (req, res) => {
   try {
-    const data = await getCampRequests();
-    res.json(data);
+    const camp_id = req.user.camp_id || req.query.camp_id;
+    const requests = await getCampRequests(camp_id);
+    res.json(requests);
   } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching requests',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error fetching camp requests', error: error.message });
   }
 };

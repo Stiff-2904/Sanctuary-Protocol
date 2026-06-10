@@ -10,13 +10,11 @@ import {
 // GET ALL
 export const getExplorationsController = async (req, res) => {
   try {
-    const data = await getExplorations();
+    const camp_id = req.user.camp_id || req.query.camp_id;
+    const data = await getExplorations(camp_id);
     res.json(data);
   } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching explorations',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error fetching explorations', error: error.message });
   }
 };
 
