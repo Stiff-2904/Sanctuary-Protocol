@@ -6,9 +6,9 @@ import { updateProfessionController } from '../controllers/profession.controller
 
 const router = Router();
 
-router.get('/professions', getProfessionsController);
-router.get('/professions/:id', getProfessionByIdController);
-router.post('/professions', createProfessionController);
-router.put('/professions/:id', updateProfessionController);
+router.get('/', getProfessionsController);
+router.get('/:id', getProfessionByIdController);
+router.post('/', createProfessionController);
+router.put('/:id', updateProfessionController);
 
 export default router;
