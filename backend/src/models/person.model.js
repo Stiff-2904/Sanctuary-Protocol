@@ -1,11 +1,16 @@
 import { pool } from '../config/db.js';
 
 export const getPersons = async (camp_id) => {
+  const base = `
+    SELECT p.*, pr.name AS profession_name
+    FROM person p
+    LEFT JOIN profession pr ON p.profession_id = pr.profession_id
+  `;
   if (camp_id) {
-    const [rows] = await pool.query('SELECT * FROM person WHERE camp_id = ?', [camp_id]);
+    const [rows] = await pool.query(base + ' WHERE p.camp_id = ?', [camp_id]);
     return rows;
   }
-  const [rows] = await pool.query('SELECT * FROM person');
+  const [rows] = await pool.query(base);
   return rows;
 };
 
