@@ -7,13 +7,18 @@ import { getCampRequests } from '../models/campRequest.model.js';
 
 export const createCampRequestController = async (req, res) => {
   try {
-    const { target_camp_id, type } = req.body;
+    const { target_camp_id, type, source_camp_id: bodyCampId } = req.body;
 
-    const source_camp_id = req.user.camp_id;
+    // SuperAdmin no tiene camp fijo en el token — usa el campamento seleccionado que viene del body
+    // Los demás roles siempre usan el camp_id de su token (no se puede sobreescribir)
+    const source_camp_id =
+      req.user.role === 'SuperAdmin'
+        ? req.user.camp_id || bodyCampId
+        : req.user.camp_id;
 
     if (!source_camp_id) {
       return res.status(400).json({
-        message: 'User has no assigned camp',
+        message: 'No hay campamento seleccionado. Seleccioná un campamento antes de crear una solicitud.',
       });
     }
 
