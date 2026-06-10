@@ -90,39 +90,35 @@ function NewRequestModal({
   const savedCamp = localStorage.getItem("selected_camp");
   const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
 
+  // Carga el catálogo de recursos una sola vez al montar
   useEffect(() => {
-    const fetchData = async () => {
-      setLoadingResources(true);
-      try {
-        const [resRes, invRes] = await Promise.all([
-          api.get("/resources"),
-          api.get(`/inventory/me${campId ? `?camp_id=${campId}` : ""}`),
-        ]);
-        setResources(resRes.data);
-        setInventory(invRes.data);
-      } catch {
-        setError("Error al cargar recursos");
-      } finally {
-        setLoadingResources(false);
-      }
-    };
-    fetchData();
+    api.get("/resources").then((res) => setResources(res.data));
   }, []);
 
-  const myInventory = inventory.filter(
-    (i) => i.camp_id !== Number(targetCampId)
-  );
+  // Cuando se selecciona un campamento destino, carga SU inventario
+  useEffect(() => {
+    if (!targetCampId) return;
+    setLoadingResources(true);
+    setLines([]); // limpiar selección previa si cambia el destino
+    setSelectedResourceId("");
+    api
+      .get(`/inventory/me?camp_id=${targetCampId}`)
+      .then((res) => setInventory(res.data))
+      .catch(() => setError("Error al cargar inventario del campamento destino"))
+      .finally(() => setLoadingResources(false));
+  }, [targetCampId]);
 
+  // Recursos disponibles en el destino que aún no fueron agregados a la solicitud
   const availableToAdd = resources.filter(
     (r) =>
       !lines.find((l) => l.resource_id === r.resource_id) &&
-      myInventory.find((i) => i.resource_id === r.resource_id)
+      inventory.find((i) => i.resource_id === r.resource_id)
   );
 
   const handleAddResource = () => {
     if (!selectedResourceId) return;
     const res = resources.find((r) => r.resource_id === Number(selectedResourceId));
-    const inv = myInventory.find((i) => i.resource_id === Number(selectedResourceId));
+    const inv = inventory.find((i) => i.resource_id === Number(selectedResourceId));
     if (!res || !inv) return;
     setLines((prev) => [
       ...prev,
@@ -190,6 +186,8 @@ function NewRequestModal({
       setLoading(false);
     }
   };
+
+  const targetCampName = camps.find((c) => c.camp_id === Number(targetCampId))?.name ?? "";
 
   return (
     <motion.div
@@ -305,11 +303,11 @@ function NewRequestModal({
         {step === 2 && (
           <div>
             <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.8rem", marginBottom: "1rem" }}>
-              RECURSOS A SOLICITAR
+              RECURSOS DISPONIBLES EN {targetCampName.toUpperCase()}
             </p>
 
             {loadingResources ? (
-              <p style={{ color: "#555", fontFamily: "monospace", fontSize: "0.85rem", marginBottom: "1rem" }}>Cargando recursos...</p>
+              <p style={{ color: "#555", fontFamily: "monospace", fontSize: "0.85rem", marginBottom: "1rem" }}>Cargando inventario del destino...</p>
             ) : (
               <>
                 <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -330,10 +328,10 @@ function NewRequestModal({
                     disabled={availableToAdd.length === 0}
                   >
                     <option value="">
-                      {availableToAdd.length === 0 ? "Sin recursos disponibles" : "-- Seleccionar recurso --"}
+                      {availableToAdd.length === 0 ? "Sin recursos disponibles en el destino" : "-- Seleccionar recurso --"}
                     </option>
                     {availableToAdd.map((r) => {
-                      const inv = myInventory.find((i) => i.resource_id === r.resource_id);
+                      const inv = inventory.find((i) => i.resource_id === r.resource_id);
                       return (
                         <option key={r.resource_id} value={r.resource_id}>
                           {r.name} (disponible: {Number(inv?.quantity ?? 0)})
@@ -362,7 +360,7 @@ function NewRequestModal({
                 {lines.length === 0 ? (
                   <div style={{ background: "#1a1a1a", border: "1px dashed #333", borderRadius: "6px", padding: "1.5rem", textAlign: "center", color: "#555", fontFamily: "monospace", fontSize: "0.85rem", marginBottom: "1rem" }}>
                     <Package size={24} style={{ marginBottom: "0.5rem", opacity: 0.3 }} />
-                    <p>Agregá recursos a la solicitud</p>
+                    <p>Seleccioná los recursos que querés solicitar</p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
