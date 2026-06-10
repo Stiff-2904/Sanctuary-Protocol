@@ -12,6 +12,8 @@ import Admission from "./pages/admission/Admission";
 import Inventory from "./pages/inventory/Inventory";
 import Expeditions from "./pages/expeditions/Expeditions";
 import Requests from "./pages/request/Request";
+import Persons from "./pages/persons/Persons";
+import TemporaryAssignments from "./pages/persons/TemporaryAssignments";
 import PrivateRoute from "./components/PrivateRoute";
 
 // Redirige al dashboard correcto según el rol
@@ -142,6 +144,22 @@ function App() {
             element={
               <PrivateRoute allowedRoles={["ExpeditionManager", "SuperAdmin"]}>
                 <Requests />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/persons"
+            element={
+              <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
+                <Persons />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/temporary-assignments"
+            element={
+              <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
+                <TemporaryAssignments />
               </PrivateRoute>
             }
           />

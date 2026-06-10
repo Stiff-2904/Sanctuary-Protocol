@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, LogOut } from "lucide-react";
+import { Users, LogOut, UserCheck, Shuffle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 
@@ -85,6 +85,34 @@ export default function AdminDashboard() {
               <h3 style={{ color: "#00ff41", fontFamily: "monospace", marginBottom: "0.25rem" }}>Admisión de Personas</h3>
               <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>
                 Revisar solicitudes, evaluaciones de IA y aprobar o rechazar ingresos
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(0,255,65,0.3)" }}
+            onClick={() => navigate("/persons")}
+            style={{ background: "#1a1a1a", border: "1px solid #00ff41", borderRadius: "12px", padding: "2rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1.5rem", marginTop: "1rem" }}
+          >
+            <UserCheck size={48} color="#00ff41" />
+            <div>
+              <h3 style={{ color: "#00ff41", fontFamily: "monospace", marginBottom: "0.25rem" }}>Personas del Campamento</h3>
+              <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>
+                Gestionar el estado de salud y condición de los miembros
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(255,170,0,0.2)" }}
+            onClick={() => navigate("/temporary-assignments")}
+            style={{ background: "#1a1a1a", border: "1px solid #ffaa00", borderRadius: "12px", padding: "2rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1.5rem", marginTop: "1rem" }}
+          >
+            <Shuffle size={48} color="#ffaa00" />
+            <div>
+              <h3 style={{ color: "#ffaa00", fontFamily: "monospace", marginBottom: "0.25rem" }}>Reasignaciones Temporales</h3>
+              <p style={{ color: "#888", fontFamily: "monospace", fontSize: "0.85rem" }}>
+                Mover trabajadores entre profesiones cuando una queda sin personal
               </p>
             </div>
           </motion.div>

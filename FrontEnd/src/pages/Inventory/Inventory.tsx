@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, AlertTriangle, Plus, X } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 interface InventoryItem {
   inventory_id: number;
@@ -25,6 +26,9 @@ export default function Inventory() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ resource_id: "", quantity: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  const { user } = useAuth();
+  const canEdit = user?.role !== "Worker";
 
   const savedCamp = localStorage.getItem("selected_camp");
   const campId = savedCamp ? JSON.parse(savedCamp).camp_id : null;
@@ -75,17 +79,19 @@ export default function Inventory() {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <h1 style={{ color: "#ffaa00", fontFamily: "monospace" }}>📦 Inventario del Campamento</h1>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              background: "#ffaa00", color: "#0a0a0a", border: "none",
-              padding: "0.75rem 1.5rem", borderRadius: "8px", cursor: "pointer",
-              fontFamily: "monospace", fontWeight: "bold",
-              display: "flex", alignItems: "center", gap: "0.5rem"
-            }}
-          >
-            <Plus size={16} /> Agregar Recurso
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowForm(true)}
+              style={{
+                background: "#ffaa00", color: "#0a0a0a", border: "none",
+                padding: "0.75rem 1.5rem", borderRadius: "8px", cursor: "pointer",
+                fontFamily: "monospace", fontWeight: "bold",
+                display: "flex", alignItems: "center", gap: "0.5rem"
+              }}
+            >
+              <Plus size={16} /> Agregar Recurso
+            </button>
+          )}
         </div>
 
         {/* Estadísticas */}
