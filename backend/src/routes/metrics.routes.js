@@ -10,7 +10,7 @@ const router = Router();
 router.get(
   '/dashboard',
   authenticate,
-  authorizeRoles('Admin', 'ResourceManager', 'ExpeditionManager', 'SuperAdmin'),
+  authorizeRoles('Admin', 'ResourceManager', 'ExpeditionManager', 'SuperAdmin', 'Worker'),
   getDashboardMetricsController,
 );
 
