@@ -5,6 +5,7 @@ import {
   updateExploration,
   assignPersonToExploration,
   addResourceToExploration,
+  completeExploration,
 } from '../models/exploration.model.js';
 
 // GET ALL
@@ -89,6 +90,19 @@ export const addResourceController = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: 'Error adding resource',
+      error: error.message,
+    });
+  }
+};
+
+// COMPLETE EXPLORATION
+export const completeExplorationController = async (req, res) => {
+  try {
+    const result = await completeExploration(req.params.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({
+      message: 'Error completing exploration',
       error: error.message,
     });
   }

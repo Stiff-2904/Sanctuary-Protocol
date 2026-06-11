@@ -10,6 +10,7 @@ import {
   updateExplorationController,
   assignPersonController,
   addResourceController,
+  completeExplorationController,
 } from '../controllers/exploration.controller.js';
 
 const router = Router();
@@ -53,12 +54,20 @@ router.post(
   assignPersonController,
 );
 
-// ADD RESOURCE
+// ADD RESOURCE TO RECOUNT
 router.post(
   '/:id/resources',
   authenticate,
   authorizeRoles('ExpeditionManager', 'SuperAdmin'),
   addResourceController,
+);
+
+// COMPLETE EXPLORATION
+router.post(
+  '/:id/complete',
+  authenticate,
+  authorizeRoles('ExpeditionManager', 'SuperAdmin'),
+  completeExplorationController,
 );
 
 export default router;

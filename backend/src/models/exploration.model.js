@@ -198,7 +198,7 @@ export const assignPersonToExploration = async (exploration_id, person_id) => {
   };
 };
 
-// ADD RESOURCE
+// ADD RESOURCE TO RECOUNT (no suma al inventario todavía)
 export const addResourceToExploration = async (
   exploration_id,
   resource_id,
@@ -240,8 +240,7 @@ export const addResourceToExploration = async (
     await pool.query(
       `
       UPDATE exploration_resources
-      SET quantity_obtained =
-          quantity_obtained + ?
+      SET quantity_obtained = quantity_obtained + ?
       WHERE exploration_id = ?
         AND resource_id = ?
       `,
@@ -264,4 +263,62 @@ export const addResourceToExploration = async (
   return {
     message: 'Resource registered successfully',
   };
+};
+
+// COMPLETE EXPLORATION — suma recursos al inventario y marca como completada
+export const completeExploration = async (exploration_id) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      'SELECT * FROM exploration WHERE exploration_id = ?',
+      [exploration_id],
+    );
+    if (rows.length === 0) throw new Error('Exploration not found');
+
+    const exploration = rows[0];
+    if (exploration.status === 'completed') {
+      throw new Error('Exploration already completed');
+    }
+
+    // Obtener recursos del recuento
+    const [resources] = await connection.query(
+      'SELECT * FROM exploration_resources WHERE exploration_id = ?',
+      [exploration_id],
+    );
+
+    // Sumar cada recurso al inventario del campamento
+    for (const r of resources) {
+      await connection.query(
+        `INSERT INTO inventory (camp_id, resource_id, quantity)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
+        [exploration.camp_id, r.resource_id, r.quantity_obtained, r.quantity_obtained],
+      );
+    }
+
+    // Marcar personas como de regreso
+    await connection.query(
+      `UPDATE person p
+       JOIN exploration_persons ep ON ep.person_id = p.person_id
+       SET p.status = 'active'
+       WHERE ep.exploration_id = ?`,
+      [exploration_id],
+    );
+
+    // Marcar expedición como completada
+    await connection.query(
+      'UPDATE exploration SET status = ? WHERE exploration_id = ?',
+      ['completed', exploration_id],
+    );
+
+    await connection.commit();
+    return { message: 'Exploration completed, resources added to inventory' };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
