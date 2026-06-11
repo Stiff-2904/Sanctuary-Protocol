@@ -201,6 +201,9 @@ export default function Expeditions() {
         status: "active",
       });
       setCreatedId(res.data.exploration_id);
+      // Refresh persons so the list reflects the latest statuses
+      const personsRes = await api.get(`/persons?camp_id=${campId}`);
+      setPersons(personsRes.data);
       setWizardStep(2);
     } catch {
       setFormError("Error al crear la expedición. Intente de nuevo.");
