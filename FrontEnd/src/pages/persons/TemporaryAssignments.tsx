@@ -55,8 +55,8 @@ export default function TemporaryAssignments() {
     setLoading(true);
     try {
       const [assignRes, historyRes, personRes, profRes] = await Promise.all([
-        api.get("/temporary-assignments"),
-        api.get("/temporary-assignments/history"),
+        api.get(`/temporary-assignments${campId ? `?camp_id=${campId}` : ""}`),
+        api.get(`/temporary-assignments/history${campId ? `?camp_id=${campId}` : ""}`),
         api.get(`/persons${campId ? `?camp_id=${campId}` : ""}`),
         api.get("/professions"),
       ]);
