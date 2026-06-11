@@ -9,7 +9,11 @@ import { getTemporaryAssignmentHistory } from '../models/temporaryAssignment.mod
 // GET ACTIVE ASSIGNMENTS
 export const getTemporaryAssignmentsController = async (req, res) => {
   try {
-    const data = await getTemporaryAssignments();
+    const camp_id = req.user.camp_id || req.query.camp_id;
+    if (!camp_id) {
+      return res.status(400).json({ message: 'camp_id is required' });
+    }
+    const data = await getTemporaryAssignments(camp_id);
     res.json(data);
   } catch (error) {
     res.status(500).json({
@@ -50,8 +54,11 @@ export const endTemporaryAssignmentController = async (req, res) => {
 // GET ASSIGNMENT HISTORY
 export const getTemporaryAssignmentHistoryController = async (req, res) => {
   try {
-    const data = await getTemporaryAssignmentHistory();
-
+    const camp_id = req.user.camp_id || req.query.camp_id;
+    if (!camp_id) {
+      return res.status(400).json({ message: 'camp_id is required' });
+    }
+    const data = await getTemporaryAssignmentHistory(camp_id);
     res.json(data);
   } catch (error) {
     res.status(500).json({

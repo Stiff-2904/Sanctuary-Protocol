@@ -1,7 +1,7 @@
 import { pool } from '../config/db.js';
 
 // GET ACTIVE ASSIGNMENTS
-export const getTemporaryAssignments = async () => {
+export const getTemporaryAssignments = async (camp_id) => {
   const [rows] = await pool.query(`
     SELECT
       ta.assignment_id,
@@ -29,9 +29,10 @@ export const getTemporaryAssignments = async () => {
       ON ta.temporary_profession_id = tp.profession_id
 
     WHERE ta.end_date IS NULL
+      AND p.camp_id = ?
 
     ORDER BY ta.start_date DESC
-  `);
+  `, [camp_id]);
 
   return rows;
 };
@@ -173,7 +174,7 @@ export const endTemporaryAssignment = async (assignment_id) => {
 };
 
 // GET ASSIGNMENT HISTORY
-export const getTemporaryAssignmentHistory = async () => {
+export const getTemporaryAssignmentHistory = async (camp_id) => {
   const [rows] = await pool.query(`
     SELECT
       ta.assignment_id,
@@ -200,8 +201,10 @@ export const getTemporaryAssignmentHistory = async () => {
     JOIN profession tp
       ON ta.temporary_profession_id = tp.profession_id
 
+    WHERE p.camp_id = ?
+
     ORDER BY ta.start_date DESC
-  `);
+  `, [camp_id]);
 
   return rows;
 };
