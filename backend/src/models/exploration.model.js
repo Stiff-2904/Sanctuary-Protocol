@@ -168,6 +168,14 @@ export const assignPersonToExploration = async (exploration_id, person_id) => {
     throw new Error('Person belongs to a different camp');
   }
 
+  if (person.status !== 'active') {
+    throw new Error(`Person is not available (status: ${person.status})`);
+  }
+
+  if (exploration.status !== 'active') {
+    throw new Error('Cannot assign persons to a non-active exploration');
+  }
+
   const [existing] = await pool.query(
     `
     SELECT *
@@ -191,6 +199,12 @@ export const assignPersonToExploration = async (exploration_id, person_id) => {
     VALUES (?, ?)
     `,
     [exploration_id, person_id],
+  );
+
+  // Mark person as out of camp
+  await pool.query(
+    'UPDATE person SET status = ? WHERE person_id = ?',
+    ['out_of_camp', person_id],
   );
 
   return {
