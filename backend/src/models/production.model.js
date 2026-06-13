@@ -1,13 +1,5 @@
 import { pool } from '../config/db.js';
 
-// ── Reglas de negocio 
-const PROFESSION_FARMER = 4;       // Agricultor → produce comida
-const PROFESSION_COLLECTOR = 6;    // Recolector → produce agua
-const RESOURCE_WATER = 1;
-const RESOURCE_FOOD = 2;
-const PRODUCTION_PER_WORKER = 3;   // unidades producidas por trabajador/día
-const CONSUMPTION_PER_PERSON = 1;  // unidades consumidas por persona/día
-
 export const processDailyProduction = async (camp_id) => {
   const connection = await pool.getConnection();
 
@@ -15,24 +7,24 @@ export const processDailyProduction = async (camp_id) => {
     await connection.beginTransaction();
 
     // VALIDAR SI YA SE PROCESÓ HOY
-    const [[alreadyProcessed]] = await connection.query(
+    const [processedRows] = await connection.query(
       `
       SELECT COUNT(*) AS total
       FROM resource_production rp
-      JOIN person p
-        ON rp.person_id = p.person_id
+      JOIN person p ON rp.person_id = p.person_id
       WHERE p.camp_id = ?
       AND rp.production_date = CURDATE()
       `,
       [camp_id],
     );
+    const alreadyProcessed = processedRows[0];
 
     if (alreadyProcessed.total > 0) {
       throw new Error('Daily production already processed today');
     }
 
     // PERSONAS ACTIVAS
-    const [[activePeople]] = await connection.query(
+    const [activeRows] = await connection.query(
       `
       SELECT COUNT(*) AS total
       FROM person
@@ -41,62 +33,66 @@ export const processDailyProduction = async (camp_id) => {
       `,
       [camp_id],
     );
-
+    const activePeople = activeRows[0];
     const activeCount = activePeople.total;
 
-    // AGRICULTORES
-    const [[farmers]] = await connection.query(
+    // AGRICULTORES (profession_id = 4)
+    const [farmerCountRows] = await connection.query(
       `
       SELECT COUNT(*) AS total
       FROM person
       WHERE camp_id = ?
       AND status = 'active'
-      AND profession_id = ?
-    `,
-      [camp_id, PROFESSION_FARMER],
+      AND profession_id = 4
+      `,
+      [camp_id],
     );
+    const farmers = farmerCountRows[0];
 
-    // RECOLECTORES
-    const [[collectors]] = await connection.query(
+    // RECOLECTORES (profession_id = 6)
+    const [collectorCountRows] = await connection.query(
       `
       SELECT COUNT(*) AS total
       FROM person
       WHERE camp_id = ?
       AND status = 'active'
-      AND profession_id = ?
-    `,
-      [camp_id, PROFESSION_COLLECTOR],
+      AND profession_id = 6
+      `,
+      [camp_id],
     );
+    const collectors = collectorCountRows[0];
 
-    const foodProduced = farmers.total * PRODUCTION_PER_WORKER;
-    const waterProduced = collectors.total * PRODUCTION_PER_WORKER;
+    const foodProduced = farmers.total * 3;
+    const waterProduced = collectors.total * 3;
 
-    const foodConsumed = activeCount * CONSUMPTION_PER_PERSON;
-    const waterConsumed = activeCount * CONSUMPTION_PER_PERSON;
+    const foodConsumed = activeCount;
+    const waterConsumed = activeCount;
 
     const foodNet = foodProduced - foodConsumed;
     const waterNet = waterProduced - waterConsumed;
 
     // VALIDAR INVENTARIO DISPONIBLE
-    const [[waterInventory]] = await connection.query(
+    const [waterRows] = await connection.query(
       `
       SELECT quantity
       FROM inventory
       WHERE camp_id = ?
-      AND resource_id = ?
+      AND resource_id = 1
       `,
-      [camp_id, RESOURCE_WATER],
+      [camp_id],
     );
+    const waterInventory = waterRows[0];
 
-    const [[foodInventory]] = await connection.query(
+    const [foodRows] = await connection.query(
       `
       SELECT quantity
       FROM inventory
       WHERE camp_id = ?
-      AND resource_id = ?
+      AND resource_id = 2
       `,
-      [camp_id, RESOURCE_FOOD],
+      [camp_id],
     );
+    const foodInventory = foodRows[0];
 
     const currentWater = Number(waterInventory?.quantity || 0);
     const currentFood = Number(foodInventory?.quantity || 0);
@@ -109,81 +105,69 @@ export const processDailyProduction = async (camp_id) => {
       throw new Error('Insufficient food for daily consumption');
     }
 
-    // COMIDA
+    // ACTUALIZAR COMIDA (resource_id = 2)
     await connection.query(
       `
       UPDATE inventory
       SET quantity = quantity + ?
       WHERE camp_id = ?
-      AND resource_id = ?
-    `,
-      [foodNet, camp_id, RESOURCE_FOOD],
+      AND resource_id = 2
+      `,
+      [foodNet, camp_id],
     );
 
-    // AGUA
+    // ACTUALIZAR AGUA (resource_id = 1)
     await connection.query(
       `
       UPDATE inventory
       SET quantity = quantity + ?
       WHERE camp_id = ?
-      AND resource_id = ?
-    `,
-      [waterNet, camp_id, RESOURCE_WATER],
+      AND resource_id = 1
+      `,
+      [waterNet, camp_id],
     );
 
-    // REGISTRO PRODUCCIÓN AGRICULTORES
+    // REGISTRAR PRODUCCIÓN AGRICULTORES
     const [farmerRows] = await connection.query(
       `
       SELECT person_id
       FROM person
       WHERE camp_id = ?
-      AND profession_id = ?
+      AND profession_id = 4
       AND status = 'active'
-    `,
-      [camp_id, PROFESSION_FARMER],
+      `,
+      [camp_id],
     );
 
     for (const farmer of farmerRows) {
       await connection.query(
         `
-        INSERT INTO resource_production
-        (
-          person_id,
-          resource_id,
-          quantity_produced,
-          production_date
-        )
-        VALUES (?, ?, ?, CURDATE())
-      `,
-        [farmer.person_id, RESOURCE_FOOD, PRODUCTION_PER_WORKER],
+        INSERT INTO resource_production (person_id, resource_id, quantity_produced, production_date)
+        VALUES (?, 2, 3, CURDATE())
+        `,
+        [farmer.person_id],
       );
     }
 
-    // REGISTRO PRODUCCIÓN RECOLECTORES
+    // REGISTRAR PRODUCCIÓN RECOLECTORES
     const [collectorRows] = await connection.query(
       `
       SELECT person_id
       FROM person
       WHERE camp_id = ?
-      AND profession_id = ?
+      AND profession_id = 6
       AND status = 'active'
-    `,
-      [camp_id, PROFESSION_COLLECTOR],
+      `,
+      [camp_id],
     );
 
     for (const collector of collectorRows) {
       await connection.query(
         `
-        INSERT INTO resource_production
-        (
-          person_id,
-          resource_id,
-          quantity_produced,
-          production_date
-        )
-        VALUES (?, ?, ?, CURDATE())
-      `,
-        [collector.person_id, RESOURCE_WATER, PRODUCTION_PER_WORKER],
+        INSERT INTO resource_production (person_id, resource_id, quantity_produced, production_date)
+        VALUES (?, 1, 3, CURDATE())
+        `,
+        [collector.person_id],
       );
     }
 
@@ -192,13 +176,10 @@ export const processDailyProduction = async (camp_id) => {
     return {
       camp_id,
       active_people: activeCount,
-
       water_consumed: waterConsumed,
       food_consumed: foodConsumed,
-
       water_produced: waterProduced,
       food_produced: foodProduced,
-
       net_water: waterNet,
       net_food: foodNet,
     };
