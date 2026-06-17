@@ -9,6 +9,7 @@ import ResourceManagerDashboard from "./pages/dashboards/ResourceManagerDashboar
 import ExpeditionManagerDashboard from "./pages/dashboards/ExpeditionManagerDashboard";
 import WorkerDashboard from "./pages/dashboards/WorkerDashboard";
 import Admission from "./pages/admission/Admission";
+import AdmissionRequests from "./pages/admission/AdmissionRequests";
 import Inventory from "./pages/inventory/Inventory";
 import Expeditions from "./pages/expeditions/Expeditions";
 import Requests from "./pages/request/Request";
@@ -120,6 +121,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
                 <Admission />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admission-requests"
+            element={
+              <PrivateRoute allowedRoles={["Admin", "SuperAdmin"]}>
+                <AdmissionRequests />
               </PrivateRoute>
             }
           />

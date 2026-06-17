@@ -84,6 +84,7 @@ export default function SuperAdminDashboard() {
 
   const modules = [
     { label: "Admisión de Personas", path: "/admission", color: "#00ff41", emoji: "👥" },
+    { label: "Solicitudes de Admisión", path: "/admission-requests", color: "#00aaff", emoji: "🧠" },
     { label: "Personas", path: "/persons", color: "#00ff41", emoji: "🧍" },
     { label: "Reasignaciones Temporales", path: "/temporary-assignments", color: "#ffaa00", emoji: "🔄" },
     { label: "Inventario", path: "/inventory", color: "#ffaa00", emoji: "📦" },
