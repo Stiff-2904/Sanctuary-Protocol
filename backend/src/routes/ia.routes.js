@@ -3,7 +3,7 @@ import {
   evaluatePersonController,
   assignProfessionController,
   confirmDecisionController,
-} from '../controllers/ai.controller.js';
+} from '../controllers/ai.Controller.js';
 
 const router = Router();
 
