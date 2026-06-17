@@ -1,36 +1,33 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
 
 dotenv.config();
 
 const getSSLConfig = () => {
-  const caPath =
-    process.env.DB_SSL_CA_PATH ||
-    path.join(process.cwd(), 'config', 'isrgrootx1.pem');
-
-  if (!process.env.DB_SSL_CA_PATH && !fs.existsSync(caPath)) {
-    console.warn(
-      'Certificado SSL no encontrado. Usando modo desarrollo (SSL relajado).',
-    );
-    return process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: true }
-      : false;
-  }
-
-  try {
+  if (process.env.DB_SSL_CA) {
     return {
-      ca: fs.readFileSync(caPath),
+      ca: process.env.DB_SSL_CA.replace(/\\n/g, '\n'),
       rejectUnauthorized: true,
       minVersion: 'TLSv1.2',
     };
-  } catch (error) {
-    console.warn('Error leyendo certificado SSL:', error.message);
-    return process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: true }
-      : false;
   }
+
+  if (process.env.DB_SSL_CA_PATH) {
+    try {
+      const fs = require('fs');
+      return {
+        ca: fs.readFileSync(process.env.DB_SSL_CA_PATH, 'utf8'),
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+      };
+    } catch (error) {
+      console.warn('Error leyendo certificado desde archivo:', error.message);
+    }
+  }
+
+  return process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: true }
+    : false;
 };
 
 export const pool = mysql.createPool({
