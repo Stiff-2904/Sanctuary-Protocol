@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Sanctuary Protocol
 =======
 # Sanctuary Protocol — Backend
@@ -413,3 +414,19 @@ Project Status:
 
 Gaudy Montero
 >>>>>>> backend-db-nube
+=======
+# 🧟 Gestión del fin | Sanctuary Protocol
+
+> Sistema de gestión de supervivencia para campamentos post-apocalípticos.
+
+## 🛡️ Sobre Sanctuary Protocol
+Nombre clave del sistema: **Sanctuary Protocol**  
+Curso: **EIF209 Programación IV**
+
+## 🛠️ Stack Tecnológico
+- **Frontend:** React 18 + TypeScript + Vite
+- **Backend:** Node.js + Express/NestJS
+- **DB:** PostgreSQL (Neon/Supabase)
+- **IA:** OpenAI API / Azure AI (Para decisiones de ingreso)
+- **Tests:** Playwright (E2E)
+>>>>>>> a70719e8189786aa98ec67b18973e9848fb8b88e

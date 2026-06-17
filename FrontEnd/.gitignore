@@ -1,0 +1,17 @@
+node_modules/
+
+# Build outputs
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env*.local
+*.log
+
+
+# IDE
+.vscode/
+.idea/
+*.swp
