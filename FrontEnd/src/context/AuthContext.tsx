@@ -61,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
+      console.log("import.meta.env.VITE_API_URL", import.meta.env.VITE_API_URL);
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/auth/login`,
         {
