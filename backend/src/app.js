@@ -33,19 +33,11 @@ const allowedOrigins = process.env.CORS_ORIGIN
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        console.error('❌ CORS bloqueado para:', origin);
-        callback(new Error('No permitido por CORS'));
-      }
-    },
+    origin: true, // Permite CUALQUIER origen
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['*'],
   }),
 );
 
