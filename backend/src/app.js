@@ -39,7 +39,7 @@ app.use(
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        console.error('CORS bloqueado para:', origin);
+        console.error('❌ CORS bloqueado para:', origin);
         callback(new Error('No permitido por CORS'));
       }
     },
@@ -48,7 +48,6 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
 );
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
