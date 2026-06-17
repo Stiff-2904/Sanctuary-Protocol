@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 node_modules/
 .pnpm/
 pnpm-lock.yaml
@@ -49,9 +48,3 @@ temp/
 .prettiercache
 .DS_Store
 Thumbs.db
-=======
-backend/
-node_modules/
-.env
-.env.docker
->>>>>>> a70719e8189786aa98ec67b18973e9848fb8b88e
