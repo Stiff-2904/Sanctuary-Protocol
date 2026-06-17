@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { getInventoryController } from '../controllers/inventory.controller.js';
-import { getInventoryByCampController } from '../controllers/inventory.controller.js';
-import { addInventoryController } from '../controllers/inventory.controller.js';
-import { updateInventoryController } from '../controllers/inventory.controller.js';
+import {
+  getInventoryController,
+  getInventoryByCampController,
+  addInventoryController,
+  updateInventoryController,
+  getInventoryAlertsController,
+  getResourceStatsController,
+} from '../controllers/inventory.controller.js';
+
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
-import { getInventoryAlertsController } from '../controllers/inventory.controller.js';
 
 const router = Router();
 
@@ -47,6 +51,13 @@ router.get(
   authenticate,
   authorizeRoles('SuperAdmin', 'ResourceManager', 'Admin'),
   getInventoryAlertsController,
+);
+
+router.get(
+  '/stats',
+  authenticate,
+  authorizeRoles('SuperAdmin', 'ResourceManager', 'Admin'),
+  getResourceStatsController,
 );
 
 export default router;

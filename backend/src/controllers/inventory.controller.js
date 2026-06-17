@@ -3,6 +3,7 @@ import { getInventoryByCamp } from '../models/inventory.model.js';
 import { addInventory } from '../models/inventory.model.js';
 import { updateInventory } from '../models/inventory.model.js';
 import { getInventoryAlerts } from '../models/inventory.model.js';
+import { pool } from '../config/db.js';
 
 // GET ALL
 export const getInventoryController = async (req, res) => {
@@ -72,5 +73,56 @@ export const getInventoryAlertsController = async (req, res) => {
       message: 'Error fetching inventory alerts',
       error: error.message,
     });
+  }
+};
+
+export const getLowResourceAlerts = async (req, res) => {
+  try {
+    const campId = req.user.camp_id;
+
+    const [alerts] = await pool.query(
+      `SELECT i.*, r.name as resource_name, r.minimum_quantity,
+              ROUND((i.quantity * 100.0 / r.minimum_quantity), 2) as percentage
+       FROM inventory i
+       JOIN resource r ON i.resource_type = r.type
+       WHERE i.camp_id = ? AND i.quantity < r.minimum_quantity
+       ORDER BY percentage ASC`,
+      [campId],
+    );
+
+    res.json({
+      success: true,
+      data: alerts,
+      count: alerts.length,
+      critical: alerts.filter((a) => a.percentage < 50).length,
+    });
+  } catch (error) {
+    console.error('Error al obtener alertas:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getResourceStatsController = async (req, res) => {
+  try {
+    const campId = req.user.camp_id;
+
+    const [stats] = await pool.query(
+      `SELECT 
+         COUNT(DISTINCT i.inventory_id) as total_resources,
+         SUM(CASE WHEN i.quantity < r.minimum_quantity THEN 1 ELSE 0 END) as low_resources,
+         SUM(i.quantity) as total_quantity
+       FROM inventory i
+       JOIN resource r ON i.resource_type = r.type
+       WHERE i.camp_id = ?`,
+      [campId],
+    );
+
+    res.json({
+      success: true,
+      data: stats[0],
+    });
+  } catch (error) {
+    console.error('Error en stats:', error);
+    res.status(500).json({ error: error.message });
   }
 };

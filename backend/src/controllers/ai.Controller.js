@@ -1,5 +1,6 @@
 import { evaluatePerson, assignProfession } from '../services/ai.service.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
+import { getServerTime } from '../utils/serverTime.js';
 
 export const evaluatePersonController = async (req, res) => {
   try {
@@ -23,6 +24,7 @@ export const evaluatePersonController = async (req, res) => {
     };
 
     const aiResult = await evaluatePerson(personData);
+    const serverTime = await getServerTime();
 
     await auditLogRepository.create({
       person_name: name,
@@ -37,7 +39,7 @@ export const evaluatePersonController = async (req, res) => {
       user_override: false,
       user_override_reason: null,
       camp_id: req.user?.campId || process.env.DEFAULT_CAMP_ID || 1,
-      evaluated_at: new Date(),
+      evaluated_at: serverTime,
     });
 
     return res.status(200).json({
@@ -94,12 +96,14 @@ export const confirmDecisionController = async (req, res) => {
       });
     }
 
+    const serverTime = await getServerTime();
+
     // Actualizar registro de auditoría
     const updated = await auditLogRepository.update(id, {
       final_decision,
       user_override: true,
       user_override_reason: user_override_reason || null,
-      updated_at: new Date(),
+      updated_at: serverTime,
     });
 
     if (!updated) {

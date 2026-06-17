@@ -1,6 +1,7 @@
 import { pool } from '../config/db.js';
 import { evaluatePerson } from '../services/ai.service.js';
 import { auditLogRepository } from '../repositories/auditLog.repository.js';
+import { getServerTime } from '../utils/serverTime.js';
 
 export const getAllAdmissions = async (req, res) => {
   try {
@@ -36,10 +37,12 @@ export const getAdmissionById = async (req, res) => {
        FROM admission_request ar
        LEFT JOIN admission_evaluation ae ON ar.request_id = ae.request_id
        WHERE ar.request_id = ?`,
-      [id]
+      [id],
     );
     if (rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Admission request not found' });
+      return res
+        .status(404)
+        .json({ success: false, error: 'Admission request not found' });
     }
     res.json({ success: true, data: rows[0] });
   } catch (error) {
@@ -69,7 +72,7 @@ export const createAdmission = async (req, res) => {
     const [personResult] = await connection.query(
       `INSERT INTO person (name, birth_date, status, camp_id)
        VALUES (?, ?, 'pending', NULL)`,
-      [name, birth_date]
+      [name, birth_date],
     );
     const personId = personResult.insertId;
 
@@ -77,13 +80,7 @@ export const createAdmission = async (req, res) => {
     const [requestResult] = await connection.query(
       `INSERT INTO admission_request (person_id, camp_id, request_date, status, skills, name, birth_date)
        VALUES (?, ?, NOW(), 'pending_ai_review', ?, ?, ?)`,
-      [
-        personId,
-        camp_id || 1,
-        JSON.stringify(skills || []),
-        name,
-        birth_date,
-      ]
+      [personId, camp_id || 1, JSON.stringify(skills || []), name, birth_date],
     );
     const requestId = requestResult.insertId;
 
@@ -99,21 +96,26 @@ export const createAdmission = async (req, res) => {
       reason,
     });
 
+    const serverTime = await getServerTime();
+
     // 4. Guardar en audit log
-    await auditLogRepository.create({
-      person_name: name,
-      ai_decision: aiResult.decision,
-      ai_confidence: aiResult.confidence,
-      ai_reasoning: aiResult.reasoning,
-      rules_applied: JSON.stringify(aiResult.rules_applied || []),
-      risk_factors: JSON.stringify(aiResult.risk_factors || []),
-      suggested_profession: aiResult.suggested_profession,
-      profession_justification: aiResult.profession_justification,
-      final_decision: 'PENDIENTE_REVISION',
-      user_override: false,
-      camp_id: camp_id || 1,
-      evaluated_at: new Date(),
-    }, connection);
+    await auditLogRepository.create(
+      {
+        person_name: name,
+        ai_decision: aiResult.decision,
+        ai_confidence: aiResult.confidence,
+        ai_reasoning: aiResult.reasoning,
+        rules_applied: JSON.stringify(aiResult.rules_applied || []),
+        risk_factors: JSON.stringify(aiResult.risk_factors || []),
+        suggested_profession: aiResult.suggested_profession,
+        profession_justification: aiResult.profession_justification,
+        final_decision: 'PENDIENTE_REVISION',
+        user_override: false,
+        camp_id: camp_id || 1,
+        evaluated_at: serverTime,
+      },
+      connection,
+    );
 
     // 5. Guardar evaluación
     await connection.query(
@@ -125,14 +127,15 @@ export const createAdmission = async (req, res) => {
         aiResult.reasoning || aiResult.profession_justification,
         aiResult.decision,
         aiResult.suggested_profession,
-      ]
+      ],
     );
 
     await connection.commit();
 
     res.status(201).json({
       success: true,
-      message: 'Solicitud creada y evaluada por IA. Pendiente de aprobación humana.',
+      message:
+        'Solicitud creada y evaluada por IA. Pendiente de aprobación humana.',
       data: {
         request_id: requestId,
         person_id: personId,
@@ -149,7 +152,8 @@ export const createAdmission = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error al procesar admisión',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      details:
+        process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   } finally {
     connection.release();
@@ -169,11 +173,13 @@ export const decideAdmission = async (req, res) => {
        FROM admission_request ar
        LEFT JOIN admission_evaluation ae ON ar.request_id = ae.request_id
        WHERE ar.request_id = ?`,
-      [id]
+      [id],
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Solicitud no encontrada' });
+      return res
+        .status(404)
+        .json({ success: false, error: 'Solicitud no encontrada' });
     }
 
     const request = rows[0];
@@ -183,30 +189,31 @@ export const decideAdmission = async (req, res) => {
        SET final_decision = ?,
            justification = CONCAT(IFNULL(justification, ''), ' | Override: ', ?)
        WHERE request_id = ?`,
-      [final_decision, user_override_reason || 'Sin razón', id]
+      [final_decision, user_override_reason || 'Sin razón', id],
     );
 
     const dbStatus = final_decision === 'approved' ? 'approved' : 'rejected';
     await connection.query(
       `UPDATE admission_request SET status = ? WHERE request_id = ?`,
-      [dbStatus, id]
+      [dbStatus, id],
     );
 
     if (final_decision === 'approved') {
       const [profRows] = await connection.query(
         `SELECT profession_id FROM profession WHERE name = ? LIMIT 1`,
-        [request.suggested_profession]
+        [request.suggested_profession],
       );
-      const professionId = profRows.length > 0 ? profRows[0].profession_id : null;
+      const professionId =
+        profRows.length > 0 ? profRows[0].profession_id : null;
 
       await connection.query(
         `UPDATE person SET camp_id = ?, profession_id = ?, status = 'active' WHERE person_id = ?`,
-        [request.camp_id, professionId, request.person_id]
+        [request.camp_id, professionId, request.person_id],
       );
     } else {
       await connection.query(
         `UPDATE person SET status = 'rejected' WHERE person_id = ?`,
-        [request.person_id]
+        [request.person_id],
       );
     }
 

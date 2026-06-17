@@ -7,6 +7,7 @@ import { rejectCampRequestController } from '../controllers/campRequest.controll
 import { getCampRequestsController } from '../controllers/campRequest.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
+import { completeExpeditionController } from '../controllers/campRequest.controller.js';
 
 const router = Router();
 
@@ -56,6 +57,13 @@ router.put(
   authenticate,
   authorizeRoles('SuperAdmin', 'Admin', 'ExpeditionManager'),
   rejectCampRequestController,
+);
+
+router.post(
+  '/:request_id/complete',
+  authenticate,
+  authorizeRoles('ExpeditionManager', 'SuperAdmin'),
+  completeExpeditionController,
 );
 
 export default router;

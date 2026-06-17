@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 const AIEvaluationSchema = z.object({
   decision: z.enum(['APROBADO', 'RECHAZADO', 'REVISION_MANUAL']),
+  source: z.string(),
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   rules_applied: z.array(z.string()),
@@ -78,6 +79,7 @@ function generateMockEvaluation(data) {
 
   return {
     decision,
+    source: 'fallback_rules',
     confidence: decision === 'REVISION_MANUAL' ? 0.45 : 0.82,
     reasoning: hasContagious
       ? 'Riesgo epidemiológico detectado: estado de salud compromete la seguridad del campamento'

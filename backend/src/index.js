@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import startDailyResourceJob from './jobs/dailyResourceJob.js';
 
 dotenv.config();
 
@@ -29,4 +30,11 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sanctuary Protocol Backend corriendo en puerto ${PORT}`);
   console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
   console.log(`DB: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+});
+
+const dailyJob = startDailyResourceJob();
+
+process.on('SIGINT', () => {
+  dailyJob.stop();
+  process.exit(0);
 });
