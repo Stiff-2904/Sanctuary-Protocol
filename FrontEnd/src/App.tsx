@@ -10,7 +10,7 @@ import ExpeditionManagerDashboard from "./pages/dashboards/ExpeditionManagerDash
 import WorkerDashboard from "./pages/dashboards/WorkerDashboard";
 import Admission from "./pages/admission/Admission";
 import AdmissionRequests from "./pages/admission/AdmissionRequests";
-import Inventory from "./pages/inventory/Inventory";
+import Inventory from "./pages/Inventory/Inventory";
 import Expeditions from "./pages/expeditions/Expeditions";
 import Requests from "./pages/request/Request";
 import Persons from "./pages/persons/Persons";
@@ -135,7 +135,9 @@ function App() {
           <Route
             path="/inventory"
             element={
-              <PrivateRoute allowedRoles={["Worker", "ResourceManager", "SuperAdmin"]}>
+              <PrivateRoute
+                allowedRoles={["Worker", "ResourceManager", "SuperAdmin"]}
+              >
                 <Inventory />
               </PrivateRoute>
             }
