@@ -25,13 +25,25 @@ interface AdmissionForm {
 }
 
 const SKILLS_OPTIONS = [
-  "Medicina", "Construcción", "Combate", "Cocina",
-  "Mecánica", "Agricultura", "Comunicaciones", "Exploración"
+  "Medicina",
+  "Construcción",
+  "Combate",
+  "Cocina",
+  "Mecánica",
+  "Agricultura",
+  "Comunicaciones",
+  "Exploración",
 ];
 
-function getActiveCampId(userId?: number): number {
+function getActiveCampId(userId?: number | null): number {
   const savedCamp = localStorage.getItem("selected_camp");
-  if (savedCamp) return JSON.parse(savedCamp).camp_id;
+  if (savedCamp) {
+    try {
+      return JSON.parse(savedCamp).camp_id;
+    } catch {
+      return 1;
+    }
+  }
   return userId ?? 1;
 }
 
@@ -56,7 +68,7 @@ export default function Admission() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<AdmissionForm>(() =>
-    buildInitialForm(getActiveCampId(user?.camp_id))
+    buildInitialForm(getActiveCampId(user?.camp_id)),
   );
   const [submitting, setSubmitting] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
@@ -109,12 +121,17 @@ export default function Admission() {
     }
   };
 
-  const handleDecide = async (id: number, decision: "approved" | "rejected") => {
+  const handleDecide = async (
+    id: number,
+    decision: "approved" | "rejected",
+  ) => {
     try {
       await api.patch(`/admissions/${id}/decide`, {
         final_decision: decision,
         user_override_reason:
-          decision === "approved" ? "Aprobado por admin" : "Rechazado por admin",
+          decision === "approved"
+            ? "Aprobado por admin"
+            : "Rechazado por admin",
       });
       fetchAdmissions();
     } catch {
@@ -183,10 +200,31 @@ export default function Admission() {
           }}
         >
           {[
-            { label: "Total", value: admissions.length, color: "#00ff41", icon: <Users size={20} color="#00ff41" /> },
-            { label: "Aprobados", value: admissions.filter((a) => a.status === "approved").length, color: "#00ff41", icon: <UserCheck size={20} color="#00ff41" /> },
-            { label: "Rechazados", value: admissions.filter((a) => a.status === "rejected").length, color: "#ff3333", icon: <UserX size={20} color="#ff3333" /> },
-            { label: "Pendientes", value: admissions.filter((a) => a.status === "pending_ai_review").length, color: "#ffaa00", icon: <Brain size={20} color="#ffaa00" /> },
+            {
+              label: "Total",
+              value: admissions.length,
+              color: "#00ff41",
+              icon: <Users size={20} color="#00ff41" />,
+            },
+            {
+              label: "Aprobados",
+              value: admissions.filter((a) => a.status === "approved").length,
+              color: "#00ff41",
+              icon: <UserCheck size={20} color="#00ff41" />,
+            },
+            {
+              label: "Rechazados",
+              value: admissions.filter((a) => a.status === "rejected").length,
+              color: "#ff3333",
+              icon: <UserX size={20} color="#ff3333" />,
+            },
+            {
+              label: "Pendientes",
+              value: admissions.filter((a) => a.status === "pending_ai_review")
+                .length,
+              color: "#ffaa00",
+              icon: <Brain size={20} color="#ffaa00" />,
+            },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -198,10 +236,22 @@ export default function Admission() {
               }}
             >
               {stat.icon}
-              <p style={{ color: "#888", fontSize: "0.9rem", marginTop: "0.5rem" }}>
+              <p
+                style={{
+                  color: "#888",
+                  fontSize: "0.9rem",
+                  marginTop: "0.5rem",
+                }}
+              >
                 {stat.label}
               </p>
-              <p style={{ color: stat.color, fontSize: "1.5rem", fontFamily: "monospace" }}>
+              <p
+                style={{
+                  color: stat.color,
+                  fontSize: "1.5rem",
+                  fontFamily: "monospace",
+                }}
+              >
                 {stat.value}
               </p>
             </div>
@@ -228,7 +278,9 @@ export default function Admission() {
           </h2>
 
           {loading && (
-            <p style={{ color: "#00ff41", fontFamily: "monospace" }}>Cargando...</p>
+            <p style={{ color: "#00ff41", fontFamily: "monospace" }}>
+              Cargando...
+            </p>
           )}
           {error && (
             <p style={{ color: "#ff3333", fontFamily: "monospace" }}>{error}</p>
@@ -264,7 +316,13 @@ export default function Admission() {
                   {new Date(admission.request_date).toLocaleDateString()}
                 </p>
               </div>
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                }}
+              >
                 <span
                   style={{
                     color: statusColor[admission.status] ?? "#888",
@@ -277,7 +335,9 @@ export default function Admission() {
                 {admission.status === "pending_ai_review" && (
                   <>
                     <button
-                      onClick={() => handleDecide(admission.request_id, "approved")}
+                      onClick={() =>
+                        handleDecide(admission.request_id, "approved")
+                      }
                       style={{
                         background: "transparent",
                         border: "1px solid #00ff41",
@@ -292,7 +352,9 @@ export default function Admission() {
                       Aprobar
                     </button>
                     <button
-                      onClick={() => handleDecide(admission.request_id, "rejected")}
+                      onClick={() =>
+                        handleDecide(admission.request_id, "rejected")
+                      }
                       style={{
                         background: "transparent",
                         border: "1px solid #ff3333",
@@ -457,7 +519,13 @@ export default function Admission() {
                 )}
 
                 {!aiResult && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1rem",
+                    }}
+                  >
                     <div>
                       <label
                         style={{
@@ -470,7 +538,9 @@ export default function Admission() {
                       </label>
                       <input
                         value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, name: e.target.value })
+                        }
                         style={{
                           width: "100%",
                           background: "#0a0a0a",
@@ -573,7 +643,9 @@ export default function Admission() {
                               background: form.skills.includes(skill)
                                 ? "#00ff41"
                                 : "transparent",
-                              color: form.skills.includes(skill) ? "#0a0a0a" : "#00ff41",
+                              color: form.skills.includes(skill)
+                                ? "#0a0a0a"
+                                : "#00ff41",
                               border: "1px solid #00ff41",
                               borderRadius: "4px",
                               padding: "0.25rem 0.75rem",
@@ -632,7 +704,10 @@ export default function Admission() {
                       <input
                         value={form.physical_condition}
                         onChange={(e) =>
-                          setForm({ ...form, physical_condition: e.target.value })
+                          setForm({
+                            ...form,
+                            physical_condition: e.target.value,
+                          })
                         }
                         style={{
                           width: "100%",
@@ -730,7 +805,9 @@ export default function Admission() {
                       }}
                     >
                       <Brain size={18} />
-                      {submitting ? "Evaluando con IA..." : "Enviar a evaluación de IA"}
+                      {submitting
+                        ? "Evaluando con IA..."
+                        : "Enviar a evaluación de IA"}
                     </button>
                   </div>
                 )}
