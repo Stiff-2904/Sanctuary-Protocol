@@ -172,6 +172,10 @@ export const assignPersonToExploration = async (exploration_id, person_id) => {
     throw new Error(`Person is not available (status: ${person.status})`);
   }
 
+  if (person.health_status && person.health_status !== 'healthy') {
+    throw new Error(`Person is not fit for exploration (health_status: ${person.health_status})`);
+  }
+
   if (exploration.status !== 'active') {
     throw new Error('Cannot assign persons to a non-active exploration');
   }
@@ -201,10 +205,12 @@ export const assignPersonToExploration = async (exploration_id, person_id) => {
     [exploration_id, person_id],
   );
 
-  // Mark person as out of camp
+  // Marcar persona como "fuera del campamento" en health_status
+  // (status sigue siendo 'active': la persona sigue siendo parte del campamento,
+  //  solo está temporalmente fuera por la expedición)
   await pool.query(
-    'UPDATE person SET status = ? WHERE person_id = ?',
-    ['out_of_camp', person_id],
+    'UPDATE person SET health_status = ? WHERE person_id = ?',
+    ['away', person_id],
   );
 
   return {
@@ -312,12 +318,14 @@ export const completeExploration = async (exploration_id) => {
       );
     }
 
-    // Marcar personas como de regreso
+    // Marcar personas como de regreso (restaurar su salud, no su disponibilidad
+    // ya que status nunca se tocó al salir de expedición)
     await connection.query(
       `UPDATE person p
        JOIN exploration_persons ep ON ep.person_id = p.person_id
-       SET p.status = 'active'
-       WHERE ep.exploration_id = ?`,
+       SET p.health_status = 'healthy'
+       WHERE ep.exploration_id = ?
+         AND p.health_status = 'away'`,
       [exploration_id],
     );
 
