@@ -2,9 +2,29 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+const convertDecision = (decision) => {
+  if (!decision) return 'REVISION_MANUAL';
+
+  const decisionLower = decision.toLowerCase().trim();
+
+  if (
+    decisionLower.includes('approved') ||
+    decisionLower.includes('aprobado')
+  ) {
+    return 'APROBADO';
+  } else if (
+    decisionLower.includes('rejected') ||
+    decisionLower.includes('rechazado')
+  ) {
+    return 'RECHAZADO';
+  }
+
+  return 'REVISION_MANUAL';
+};
+
 export const evaluatePerson = async (personData, imageBase64 = null) => {
   if (!process.env.GEMINI_API_KEY) {
-    console.warn('️ GEMINI_API_KEY no configurada, usando mock');
+    console.warn('⚠️ GEMINI_API_KEY no configurada, usando mock');
     return evaluateWithMock(personData);
   }
 
@@ -40,16 +60,20 @@ INFORMACIÓN DE LA PERSONA:
 
 ${imageBase64 ? 'IMAGEN ADJUNTA: Analiza la imagen (foto o tarjeta de identificación) y extrae información relevante sobre el estado físico, signos de infección, o detalles de la identificación.' : ''}
 
+INSTRUCCIONES CRÍTICAS:
+- La decisión DEBE ser exactamente "APROBADO" o "RECHAZADO" (en español y mayúsculas)
+- NO uses "approved", "rejected" u otros valores en inglés
+- Responde EXACTAMENTE en formato JSON válido
+
 Responde EXACTAMENTE en este formato JSON:
 {
-  "decision": "approved" o "rejected",
+  "decision": "APROBADO" o "RECHAZADO",
   "confidence": 0.0 a 1.0,
   "reasoning": "explicación detallada de por qué se tomó esta decisión",
   "suggested_profession": "profesión sugerida basada en habilidades",
   "profession_justification": "por qué esa profesión es adecuada",
   "risk_factors": ["riesgo 1", "riesgo 2"],
-  "rules_applied": ["regla 1 aplicada", "regla 2 aplicada"],
-  "image_analysis": "análisis de la imagen si fue proporcionada"
+  "rules_applied": ["regla 1 aplicada", "regla 2 aplicada"]
 }`;
 
     const content = [prompt];
@@ -66,7 +90,18 @@ Responde EXACTAMENTE en este formato JSON:
     const result = await model.generateContent(content);
     const response = await result.response.text();
 
-    const aiResult = JSON.parse(response);
+    let cleanResponse = response.trim();
+    if (cleanResponse.startsWith('```json')) {
+      cleanResponse = cleanResponse
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '');
+    } else if (cleanResponse.startsWith('```')) {
+      cleanResponse = cleanResponse.replace(/```\n?/g, '');
+    }
+
+    const aiResult = JSON.parse(cleanResponse);
+
+    aiResult.decision = convertDecision(aiResult.decision);
 
     return {
       ...aiResult,
@@ -85,13 +120,13 @@ const evaluateWithMock = (personData) => {
   const skills = personData.skills || [];
   const healthStatus = personData.health_status?.toLowerCase() || '';
 
-  let decision = 'approved';
+  let decision = 'APROBADO';
   const reasoning = [];
   const riskFactors = [];
   const rulesApplied = [];
 
   if (['infectado', 'sospechoso', 'mordido'].includes(healthStatus)) {
-    decision = 'rejected';
+    decision = 'RECHAZADO';
     riskFactors.push('Posible infección zombie');
     rulesApplied.push('Regla de seguridad: No aceptar posibles infectados');
   }
@@ -138,7 +173,7 @@ const evaluateWithMock = (personData) => {
 
   return {
     decision,
-    confidence: decision === 'approved' ? 0.85 : 0.9,
+    confidence: decision === 'APROBADO' ? 0.85 : 0.9,
     reasoning: reasoning.join('. ') || 'Evaluación estándar completada',
     suggested_profession: suggestedProfession,
     profession_justification: professionJustification,
