@@ -1,207 +1,175 @@
-import { OpenAI } from 'openai';
-import { z } from 'zod';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const AIEvaluationSchema = z.object({
-  decision: z.enum(['APROBADO', 'RECHAZADO', 'REVISION_MANUAL']),
-  source: z.string(),
-  confidence: z.number().min(0).max(1),
-  reasoning: z.string(),
-  rules_applied: z.array(z.string()),
-  risk_factors: z.array(z.string()),
-  suggested_profession: z.string(),
-  profession_justification: z.string(),
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-let _openaiClient = null;
-
-function getOpenAIClient() {
-  if (_openaiClient) return _openaiClient;
-
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey || apiKey === 'sk-tu-api-key-real-aqui') {
-    console.warn('OPENAI_API_KEY no configurada. Usando modo mock para IA.');
-    return null;
+export const evaluatePerson = async (personData, imageBase64 = null) => {
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn('️ GEMINI_API_KEY no configurada, usando mock');
+    return evaluateWithMock(personData);
   }
 
   try {
-    _openaiClient = new OpenAI({ apiKey });
-    return _openaiClient;
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 1024,
+      },
+    });
+
+    const prompt = `Eres el sistema de seguridad de un campamento post-apocalíptico zombie.
+Debes evaluar si una persona debe ser admitida basándote en reglas estrictas.
+
+REGLAS DEL CAMPAMENTO:
+1. NO aceptar personas con signos de infección zombie (mordeduras, fiebre alta, comportamiento errático)
+2. PRIORIZAR personas con habilidades útiles (médico, constructor, cocinero, cazador, mecánico, agricultor)
+3. Evaluar si representa un riesgo para el campamento
+4. Considerar su estado de salud actual
+5. Valorar su potencial contribución al campamento
+6. La edad extrema (menores de 12 o mayores de 70) puede requerir cuidados especiales
+
+INFORMACIÓN DE LA PERSONA:
+- Nombre: ${personData.name}
+- Fecha de nacimiento: ${personData.birth_date}
+- Estado de salud: ${personData.health_status}
+- Habilidades: ${JSON.stringify(personData.skills || [])}
+- Experiencia: ${personData.experience || 'Ninguna'}
+- Condición física: ${personData.physical_condition || 'Desconocida'}
+- Historial médico: ${personData.medical_history || 'Ninguno'}
+- Razón de llegada: ${personData.reason || 'No especificada'}
+
+${imageBase64 ? 'IMAGEN ADJUNTA: Analiza la imagen (foto o tarjeta de identificación) y extrae información relevante sobre el estado físico, signos de infección, o detalles de la identificación.' : ''}
+
+Responde EXACTAMENTE en este formato JSON:
+{
+  "decision": "approved" o "rejected",
+  "confidence": 0.0 a 1.0,
+  "reasoning": "explicación detallada de por qué se tomó esta decisión",
+  "suggested_profession": "profesión sugerida basada en habilidades",
+  "profession_justification": "por qué esa profesión es adecuada",
+  "risk_factors": ["riesgo 1", "riesgo 2"],
+  "rules_applied": ["regla 1 aplicada", "regla 2 aplicada"],
+  "image_analysis": "análisis de la imagen si fue proporcionada"
+}`;
+
+    const content = [prompt];
+
+    if (imageBase64) {
+      content.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType: 'image/jpeg',
+        },
+      });
+    }
+
+    const result = await model.generateContent(content);
+    const response = await result.response.text();
+
+    const aiResult = JSON.parse(response);
+
+    return {
+      ...aiResult,
+      ai_provider: 'gemini-1.5-flash',
+      evaluated_at: new Date().toISOString(),
+      input_data: personData,
+      image_analyzed: !!imageBase64,
+    };
   } catch (error) {
-    console.error('Error al inicializar OpenAI:', error.message);
-    return null;
+    console.error('❌ Error en IA (Gemini):', error.message);
+    return evaluateWithMock(personData);
   }
-}
+};
 
-function generateMockEvaluation(data) {
-  const health = (data.health_status || '').toLowerCase();
-  const history = (data.medical_history || '').toLowerCase();
+const evaluateWithMock = (personData) => {
+  const skills = personData.skills || [];
+  const healthStatus = personData.health_status?.toLowerCase() || '';
 
-  const hasContagious =
-    health.includes('contagioso') ||
-    health.includes('infección') ||
-    health.includes('grave');
-  const hasViolence =
-    history.includes('violencia') ||
-    history.includes('agresivo') ||
-    history.includes('criminal');
+  let decision = 'approved';
+  const reasoning = [];
+  const riskFactors = [];
+  const rulesApplied = [];
 
-  const decision =
-    hasContagious || hasViolence
-      ? 'RECHAZADO'
-      : data.skills?.length >= 2
-        ? 'APROBADO'
-        : 'REVISION_MANUAL';
+  if (['infectado', 'sospechoso', 'mordido'].includes(healthStatus)) {
+    decision = 'rejected';
+    riskFactors.push('Posible infección zombie');
+    rulesApplied.push('Regla de seguridad: No aceptar posibles infectados');
+  }
+
+  const usefulSkills = [
+    'medicina',
+    'construcción',
+    'combate',
+    'cocina',
+    'mecánica',
+    'agricultura',
+  ];
+  const hasUsefulSkill = skills.some((s) =>
+    usefulSkills.includes(s.toLowerCase()),
+  );
+
+  if (hasUsefulSkill) {
+    reasoning.push('Posee habilidades valiosas para el campamento');
+    rulesApplied.push('Regla de priorización: Habilidades útiles');
+  }
 
   const professionMap = {
-    medicina: 'Médico',
-    enfermería: 'Médico',
-    salud: 'Médico',
-    combate: 'Defensa',
-    armas: 'Defensa',
-    militar: 'Defensa',
-    agricultura: 'Agricultor',
-    cultivo: 'Agricultor',
-    siembra: 'Agricultor',
-    construcción: 'Constructor',
-    reparación: 'Constructor',
-    ingeniería: 'Constructor',
-    sigilo: 'Explorador',
-    orientación: 'Explorador',
-    rastreo: 'Explorador',
+    Medicina: 'Médico',
+    Construcción: 'Constructor',
+    Cocina: 'Cocinero',
+    Combate: 'Seguridad',
+    Mecánica: 'Mecánico',
+    Agricultura: 'Agricultor',
+    Comunicaciones: 'Comunicador',
+    Exploración: 'Explorador',
   };
 
-  const skills = data.skills || [];
-  const matchedSkill = skills.find((s) => professionMap[s.toLowerCase()]);
-  const suggested_profession = matchedSkill
-    ? professionMap[matchedSkill.toLowerCase()]
-    : 'Recolector';
+  let suggestedProfession = 'Trabajador general';
+  let professionJustification = 'Asignación por defecto';
+
+  for (const skill of skills) {
+    if (professionMap[skill]) {
+      suggestedProfession = professionMap[skill];
+      professionJustification = `Habilidad detectada: ${skill}`;
+      reasoning.push(`Profesión sugerida basada en habilidad: ${skill}`);
+      break;
+    }
+  }
 
   return {
     decision,
-    source: 'fallback_rules',
-    confidence: decision === 'REVISION_MANUAL' ? 0.45 : 0.82,
-    reasoning: hasContagious
-      ? 'Riesgo epidemiológico detectado: estado de salud compromete la seguridad del campamento'
-      : hasViolence
-        ? 'Historial de comportamiento violento: riesgo para la convivencia del grupo'
-        : 'Perfil compatible: habilidades y estado permiten integración segura',
-    rules_applied: [
-      '✓ Verificación de estado de salud (contagios/heridas graves)',
-      '✓ Análisis de historial médico y conductual',
-      '✓ Evaluación de habilidades útiles para el campamento',
-      '✓ Cruce con necesidades actuales de roles',
-    ],
-    risk_factors: hasContagious
-      ? ['Riesgo de contagio']
-      : hasViolence
-        ? ['Riesgo de conflicto interno']
-        : [],
-    suggested_profession,
-    profession_justification: `Asignado como ${suggested_profession} basado en: ${skills.length > 0 ? skills.join(', ') : 'habilidades no especificadas'}`,
+    confidence: decision === 'approved' ? 0.85 : 0.9,
+    reasoning: reasoning.join('. ') || 'Evaluación estándar completada',
+    suggested_profession: suggestedProfession,
+    profession_justification: professionJustification,
+    risk_factors: riskFactors,
+    rules_applied: rulesApplied,
+    ai_provider: 'mock-rule-based',
+    evaluated_at: new Date().toISOString(),
+    input_data: personData,
+    image_analyzed: false,
   };
-}
+};
 
-export async function evaluatePerson(data) {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return generateMockEvaluation(data);
-  }
-
-  const prompt = `Eres un evaluador IA para un campamento post-apocalíptico. Analiza los datos y decide si la persona ingresa y qué profesión debe ocupar.
-
-Reglas del campamento:
-- Rechazar si tiene heridas graves contagiosas o historial de violencia extrema.
-- Priorizar profesiones de defensa/médico si hay escasez.
-- Asignar profesión según habilidades y necesidades actuales.
-- Explica claramente CADA criterio aplicado.
-
-Devuelve ÚNICAMENTE JSON válido con esta estructura exacta.`;
-
-  try {
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: prompt },
-        { role: 'user', content: JSON.stringify(data) },
-      ],
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-    });
-
-    const content = response.choices[0].message.content;
-    const parsed = JSON.parse(content);
-
-    return AIEvaluationSchema.parse(parsed);
-  } catch (error) {
-    console.error('⚠️ Error con OpenAI, usando fallback mock:', error.message);
-    return generateMockEvaluation(data);
-  }
-}
-
-export async function assignProfession(skills, campNeeds = {}) {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return generateMockProfession(skills, campNeeds);
-  }
-
-  const prompt = `Basándote en las habilidades proporcionadas, asigna la profesión más adecuada para un campamento post-apocalíptico.
-
-Habilidades: ${skills.join(', ')}
-Necesidades del campamento: ${JSON.stringify(campNeeds)}
-
-Profesiones disponibles: Defensa, Médico, Explorador, Agricultor, Constructor, Recolector.
-
-Devuelve JSON con: {"profession": "string", "confidence": number, "justification": "string"}`;
-
-  try {
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'Devuelve solo JSON válido.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.3,
-    });
-
-    return JSON.parse(response.choices[0].message.content);
-  } catch (error) {
-    console.error(
-      '⚠️ Error asignando profesión, usando fallback:',
-      error.message,
-    );
-    return generateMockProfession(skills, campNeeds);
-  }
-}
-
-function generateMockProfession(skills, campNeeds) {
-  const professionMap = {
-    medicina: 'Médico',
-    enfermería: 'Médico',
-    salud: 'Médico',
-    combate: 'Defensa',
-    armas: 'Defensa',
-    militar: 'Defensa',
-    agricultura: 'Agricultor',
-    cultivo: 'Agricultor',
-    construcción: 'Constructor',
-    reparación: 'Constructor',
-    sigilo: 'Explorador',
-    orientación: 'Explorador',
+export const assignProfession = (personData, suggestedProfession) => {
+  const professionRules = {
+    Médico: ['medicina', 'doctor', 'enfermero', 'cirujano'],
+    Constructor: ['construcción', 'albañil', 'carpintero', 'ingeniero'],
+    Cocinero: ['cocina', 'chef', 'panadero'],
+    Seguridad: ['combate', 'militar', 'policía', 'guía'],
+    Mecánico: ['mecánica', 'técnico', 'electricista'],
+    Agricultor: ['agricultura', 'granjero', 'jardinero'],
   };
 
-  const matched = skills?.find((s) => professionMap[s.toLowerCase()]);
-  const profession = matched
-    ? professionMap[matched.toLowerCase()]
-    : 'Recolector';
+  const skills = personData.skills?.join(' ').toLowerCase() || '';
 
-  return {
-    profession,
-    confidence: matched ? 0.88 : 0.52,
-    justification: matched
-      ? `Habilidad "${matched}" coincide directamente con ${profession}`
-      : 'Sin habilidades especializadas detectadas, asignado como Recolector (rol base)',
-  };
-}
+  for (const [profession, keywords] of Object.entries(professionRules)) {
+    for (const keyword of keywords) {
+      if (skills.includes(keyword)) {
+        return profession;
+      }
+    }
+  }
+
+  return suggestedProfession || 'Trabajador general';
+};
