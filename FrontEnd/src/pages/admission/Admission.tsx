@@ -323,90 +323,95 @@ export default function Admission() {
                 flexWrap: "wrap",
               }}
             >
-    <div>
-      <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>
-        {admission.name}
-      </p>
-      <p style={{ color: "#888", fontSize: "0.8rem" }}>
-        {new Date(admission.birth_date).toLocaleDateString()} —{" "}
-        {new Date(admission.request_date).toLocaleDateString()}
-      </p>
-    </div>
-    <div
-      style={{
-        display: "flex",
-        gap: "0.75rem",
-        alignItems: "center",
-      }}
-    >
-      <span
-        style={{
-          color: statusColor[admission.status] ?? "#888",
-          fontFamily: "monospace",
-          fontSize: "0.8rem",
-        }}
-      >
-        ● {statusLabel[admission.status] ?? admission.status}
-      </span>
-      
-      {/* NUEVO BOTÓN: Ver evaluación de IA */}
-      <button
-        onClick={() => fetchAIEvaluation(admission.request_id)}
-        style={{
-          background: "transparent",
-          border: "1px solid #00aaff",
-          color: "#00aaff",
-          padding: "0.25rem 0.75rem",
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontFamily: "monospace",
-          fontSize: "0.8rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.25rem",
-        }}
-        title="Ver evaluación completa de IA"
-      >
-        🤖 Ver IA
-      </button>
-      
-      {admission.status === "pending_ai_review" && (
-        <>
-          <button
-            onClick={() => handleDecide(admission.request_id, "approved")}
-            style={{
-              background: "transparent",
-              border: "1px solid #00ff41",
-              color: "#00ff41",
-              padding: "0.25rem 0.75rem",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "0.8rem",
-            }}
-          >
-            Aprobar
-          </button>
-          <button
-            onClick={() => handleDecide(admission.request_id, "rejected")}
-            style={{
-              background: "transparent",
-              border: "1px solid #ff3333",
-              color: "#ff3333",
-              padding: "0.25rem 0.75rem",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontFamily: "monospace",
-              fontSize: "0.8rem",
-            }}
-          >
-            Rechazar
-          </button>
-        </>
-      )}
-    </div>
-  </motion.div>
-))}
+              <div>
+                <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>
+                  {admission.name}
+                </p>
+                <p style={{ color: "#888", fontSize: "0.8rem" }}>
+                  {new Date(admission.birth_date).toLocaleDateString()} —{" "}
+                  {new Date(admission.request_date).toLocaleDateString()}
+                </p>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: statusColor[admission.status] ?? "#888",
+                    fontFamily: "monospace",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  ● {statusLabel[admission.status] ?? admission.status}
+                </span>
+
+                {/* NUEVO BOTÓN: Ver evaluación de IA */}
+                <button
+                  onClick={() => fetchAIEvaluation(admission.request_id)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #00aaff",
+                    color: "#00aaff",
+                    padding: "0.25rem 0.75rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontSize: "0.8rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                  }}
+                  title="Ver evaluación completa de IA"
+                >
+                  🤖 Ver IA
+                </button>
+
+                {admission.status === "pending_ai_review" && (
+                  <>
+                    <button
+                      onClick={() =>
+                        handleDecide(admission.request_id, "approved")
+                      }
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #00ff41",
+                        color: "#00ff41",
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontFamily: "monospace",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleDecide(admission.request_id, "rejected")
+                      }
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #ff3333",
+                        color: "#ff3333",
+                        padding: "0.25rem 0.75rem",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontFamily: "monospace",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
         {/* Modal formulario */}
         <AnimatePresence>
