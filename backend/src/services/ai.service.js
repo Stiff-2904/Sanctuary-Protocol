@@ -32,24 +32,15 @@ const convertDecision = (decision) => {
 };
 
 export const evaluatePerson = async (personData, imageBase64 = null) => {
-  // 🔴 FORZAR ERROR PARA VER LOGS
-  console.log('🔴🔴🔴 ESTO ES UNA PRUEBA DE LOGS 🔴🔴🔴');
-  console.log(
-    '🔴 GEMINI_API_KEY:',
-    process.env.GEMINI_API_KEY || 'NO CONFIGURADA',
-  );
-
   if (!process.env.GEMINI_API_KEY) {
-    console.error('❌ NO HAY API KEY - USANDO MOCK');
-  } else {
-    console.log('✅ HAY API KEY - DEBERÍA USAR GEMINI');
-  }
-  if (!process.env.GEMINI_API_KEY) {
-    console.warn(' GEMINI_API_KEY no configurada, usando mock');
+    console.warn('⚠️ GEMINI_API_KEY no configurada, usando mock');
     return evaluateWithMock(personData);
   }
 
   try {
+    const age = calculateAge(personData.birth_date);
+    console.log('🤖 [IA] Llamando a Gemini 2.0 Flash...');
+
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
       generationConfig: {
@@ -57,8 +48,6 @@ export const evaluatePerson = async (personData, imageBase64 = null) => {
         maxOutputTokens: 1024,
       },
     });
-
-    const age = calculateAge(personData.birth_date);
 
     const prompt = `Eres el sistema de SEGURIDAD CRÍTICA de un campamento post-apocalíptico zombie.
 
@@ -90,7 +79,7 @@ INFORMACIÓN DE LA PERSONA:
 
 ${imageBase64 ? 'IMAGEN ADJUNTA: Busca signos VISIBLES de infección, mordeduras o heridas sospechosas.' : ''}
 
- PRIORIDAD: La seguridad del campamento es MÁS importante que las habilidades.
+⚠️ PRIORIDAD: La seguridad del campamento es MÁS importante que las habilidades.
 Es mejor rechazar a alguien útil pero riesgoso, que aceptar a alguien que infecte todo el campamento.
 
 Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicaciones adicionales):
@@ -118,6 +107,8 @@ Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicaciones adici
     const result = await model.generateContent(content);
     const response = await result.response.text();
 
+    console.log('✅ [IA] Respuesta recibida de Gemini');
+
     let cleanResponse = response.trim();
     if (cleanResponse.startsWith('```json')) {
       cleanResponse = cleanResponse
@@ -128,18 +119,17 @@ Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicaciones adici
     }
 
     const aiResult = JSON.parse(cleanResponse);
-
     aiResult.decision = convertDecision(aiResult.decision);
 
     return {
       ...aiResult,
-      ai_provider: 'gemini-1.5-flash',
+      ai_provider: 'gemini-2.0-flash', // ✅ CORREGIDO
       evaluated_at: new Date().toISOString(),
       input_data: { ...personData, calculated_age: age },
       image_analyzed: !!imageBase64,
     };
   } catch (error) {
-    console.error('Error en IA (Gemini):', error.message);
+    console.error('❌ Error en IA (Gemini):', error.message);
     return evaluateWithMock(personData);
   }
 };
