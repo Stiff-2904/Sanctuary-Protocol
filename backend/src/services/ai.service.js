@@ -2,11 +2,21 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+const calculateAge = (birthDate) => {
+  if (!birthDate) return null;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const convertDecision = (decision) => {
   if (!decision) return 'REVISION_MANUAL';
-
   const decisionLower = decision.toLowerCase().trim();
-
   if (
     decisionLower.includes('approved') ||
     decisionLower.includes('aprobado')
@@ -18,13 +28,12 @@ const convertDecision = (decision) => {
   ) {
     return 'RECHAZADO';
   }
-
   return 'REVISION_MANUAL';
 };
 
 export const evaluatePerson = async (personData, imageBase64 = null) => {
   if (!process.env.GEMINI_API_KEY) {
-    console.warn('⚠️ GEMINI_API_KEY no configurada, usando mock');
+    console.warn(' GEMINI_API_KEY no configurada, usando mock');
     return evaluateWithMock(personData);
   }
 
@@ -37,43 +46,50 @@ export const evaluatePerson = async (personData, imageBase64 = null) => {
       },
     });
 
-    const prompt = `Eres el sistema de seguridad de un campamento post-apocalíptico zombie.
-Debes evaluar si una persona debe ser admitida basándote en reglas estrictas.
+    const age = calculateAge(personData.birth_date);
 
-REGLAS DEL CAMPAMENTO:
-1. NO aceptar personas con signos de infección zombie (mordeduras, fiebre alta, comportamiento errático)
-2. PRIORIZAR personas con habilidades útiles (médico, constructor, cocinero, cazador, mecánico, agricultor)
-3. Evaluar si representa un riesgo para el campamento
-4. Considerar su estado de salud actual
-5. Valorar su potencial contribución al campamento
-6. La edad extrema (menores de 12 o mayores de 70) puede requerir cuidados especiales
+    const prompt = `Eres el sistema de SEGURIDAD CRÍTICA de un campamento post-apocalíptico zombie.
+
+REGLAS DE SEGURIDAD ABSOLUTAS (NO NEGOCIABLES):
+
+REGLA 0 - EDAD MÍNIMA:
+- Menores de 16 años → RECHAZAR INMEDIATAMENTE
+
+REGLA 1 - RECHAZO INMEDIATO (CUALQUIERA DE ESTAS):
+- Persona mordida (cualquier tiempo)
+- Signos de infección: fiebre, comportamiento errático, heridas sospechosas
+- Estado de salud: "sospechoso", "infectado", "herido crítico" o "enfermo"
+- Historial médico: mordeduras o infección documentadas
+
+REGLA 2 - SOLO si pasa Regla 0 y 1:
+- Evaluar habilidades útiles
+- Asignar profesión basada en habilidades
 
 INFORMACIÓN DE LA PERSONA:
 - Nombre: ${personData.name}
-- Fecha de nacimiento: ${personData.birth_date}
+- Edad calculada: ${age} años
+- Fecha de nacimiento: ${personData.birth_date || 'No especificada'}
 - Estado de salud: ${personData.health_status}
+- Condición física: ${personData.physical_condition || 'Desconocida'}
 - Habilidades: ${JSON.stringify(personData.skills || [])}
 - Experiencia: ${personData.experience || 'Ninguna'}
-- Condición física: ${personData.physical_condition || 'Desconocida'}
 - Historial médico: ${personData.medical_history || 'Ninguno'}
 - Razón de llegada: ${personData.reason || 'No especificada'}
 
-${imageBase64 ? 'IMAGEN ADJUNTA: Analiza la imagen (foto o tarjeta de identificación) y extrae información relevante sobre el estado físico, signos de infección, o detalles de la identificación.' : ''}
+${imageBase64 ? 'IMAGEN ADJUNTA: Busca signos VISIBLES de infección, mordeduras o heridas sospechosas.' : ''}
 
-INSTRUCCIONES CRÍTICAS:
-- La decisión DEBE ser exactamente "APROBADO" o "RECHAZADO" (en español y mayúsculas)
-- NO uses "approved", "rejected" u otros valores en inglés
-- Responde EXACTAMENTE en formato JSON válido
+ PRIORIDAD: La seguridad del campamento es MÁS importante que las habilidades.
+Es mejor rechazar a alguien útil pero riesgoso, que aceptar a alguien que infecte todo el campamento.
 
-Responde EXACTAMENTE en este formato JSON:
+Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicaciones adicionales):
 {
   "decision": "APROBADO" o "RECHAZADO",
-  "confidence": 0.0 a 1.0,
-  "reasoning": "explicación detallada de por qué se tomó esta decisión",
-  "suggested_profession": "profesión sugerida basada en habilidades",
-  "profession_justification": "por qué esa profesión es adecuada",
+  "confidence": 0.85,
+  "reasoning": "explicación detallada de la decisión",
+  "suggested_profession": "profesión sugerida (solo si APROBADO)",
+  "profession_justification": "justificación de la profesión",
   "risk_factors": ["riesgo 1", "riesgo 2"],
-  "rules_applied": ["regla 1 aplicada", "regla 2 aplicada"]
+  "rules_applied": ["regla aplicada 1", "regla aplicada 2"]
 }`;
 
     const content = [prompt];
@@ -107,11 +123,11 @@ Responde EXACTAMENTE en este formato JSON:
       ...aiResult,
       ai_provider: 'gemini-1.5-flash',
       evaluated_at: new Date().toISOString(),
-      input_data: personData,
+      input_data: { ...personData, calculated_age: age },
       image_analyzed: !!imageBase64,
     };
   } catch (error) {
-    console.error('❌ Error en IA (Gemini):', error.message);
+    console.error('Error en IA (Gemini):', error.message);
     return evaluateWithMock(personData);
   }
 };
@@ -119,13 +135,22 @@ Responde EXACTAMENTE en este formato JSON:
 const evaluateWithMock = (personData) => {
   const skills = personData.skills || [];
   const healthStatus = personData.health_status?.toLowerCase() || '';
+  const age = calculateAge(personData.birth_date);
 
   let decision = 'APROBADO';
   const reasoning = [];
   const riskFactors = [];
   const rulesApplied = [];
 
-  if (['infectado', 'sospechoso', 'mordido'].includes(healthStatus)) {
+  if (age !== null && age < 16) {
+    decision = 'RECHAZADO';
+    riskFactors.push(`Edad insuficiente: ${age} años (mínimo 16)`);
+    rulesApplied.push('Regla de edad mínima: 16 años');
+  }
+
+  if (
+    ['infectado', 'sospechoso', 'mordido', 'enfermo'].includes(healthStatus)
+  ) {
     decision = 'RECHAZADO';
     riskFactors.push('Posible infección zombie');
     rulesApplied.push('Regla de seguridad: No aceptar posibles infectados');
@@ -181,7 +206,7 @@ const evaluateWithMock = (personData) => {
     rules_applied: rulesApplied,
     ai_provider: 'mock-rule-based',
     evaluated_at: new Date().toISOString(),
-    input_data: personData,
+    input_data: { ...personData, calculated_age: age },
     image_analyzed: false,
   };
 };
