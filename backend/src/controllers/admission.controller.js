@@ -160,6 +160,35 @@ export const createAdmission = async (req, res) => {
   }
 };
 
+export const getAIEvaluationController = async (req, res) => {
+  try {
+    const { request_id } = req.params;
+
+    const [evaluations] = await pool.query(
+      `SELECT * FROM ia_evaluations WHERE request_id = ?`,
+      [request_id],
+    );
+
+    if (evaluations.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evaluación de IA no encontrada',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: evaluations[0],
+    });
+  } catch (error) {
+    console.error('Error al obtener evaluación de IA:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener evaluación de IA',
+    });
+  }
+};
+
 export const decideAdmission = async (req, res) => {
   const { id } = req.params;
   const { final_decision, user_override_reason } = req.body;
