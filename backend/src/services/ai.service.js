@@ -32,6 +32,18 @@ const convertDecision = (decision) => {
 };
 
 export const evaluatePerson = async (personData, imageBase64 = null) => {
+  // 🔴 FORZAR ERROR PARA VER LOGS
+  console.log('🔴🔴🔴 ESTO ES UNA PRUEBA DE LOGS 🔴🔴🔴');
+  console.log(
+    '🔴 GEMINI_API_KEY:',
+    process.env.GEMINI_API_KEY || 'NO CONFIGURADA',
+  );
+
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('❌ NO HAY API KEY - USANDO MOCK');
+  } else {
+    console.log('✅ HAY API KEY - DEBERÍA USAR GEMINI');
+  }
   if (!process.env.GEMINI_API_KEY) {
     console.warn(' GEMINI_API_KEY no configurada, usando mock');
     return evaluateWithMock(personData);
