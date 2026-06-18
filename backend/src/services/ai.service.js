@@ -1,6 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || '',
+});
 
 const calculateAge = (birthDate) => {
   if (!birthDate) return null;
@@ -32,22 +34,14 @@ const convertDecision = (decision) => {
 };
 
 export const evaluatePerson = async (personData, imageBase64 = null) => {
-  if (!process.env.GEMINI_API_KEY) {
-    console.warn('⚠️ GEMINI_API_KEY no configurada, usando mock');
+  if (!process.env.GROQ_API_KEY) {
+    console.warn('⚠️ GROQ_API_KEY no configurada, usando mock');
     return evaluateWithMock(personData);
   }
 
   try {
     const age = calculateAge(personData.birth_date);
-    console.log('🤖 [IA] Llamando a Gemini 2.0 Flash...');
-
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 1024,
-      },
-    });
+    console.log('🤖 [IA] Llamando a Groq (Llama 3.3)...');
 
     const prompt = `Eres el sistema de SEGURIDAD CRÍTICA de un campamento post-apocalíptico zombie.
 
@@ -77,8 +71,6 @@ INFORMACIÓN DE LA PERSONA:
 - Historial médico: ${personData.medical_history || 'Ninguno'}
 - Razón de llegada: ${personData.reason || 'No especificada'}
 
-${imageBase64 ? 'IMAGEN ADJUNTA: Busca signos VISIBLES de infección, mordeduras o heridas sospechosas.' : ''}
-
 ⚠️ PRIORIDAD: La seguridad del campamento es MÁS importante que las habilidades.
 Es mejor rechazar a alguien útil pero riesgoso, que aceptar a alguien que infecte todo el campamento.
 
@@ -93,43 +85,39 @@ Responde EXACTAMENTE en este formato JSON (sin markdown, sin explicaciones adici
   "rules_applied": ["regla aplicada 1", "regla aplicada 2"]
 }`;
 
-    const content = [prompt];
-
-    if (imageBase64) {
-      content.push({
-        inlineData: {
-          data: imageBase64,
-          mimeType: 'image/jpeg',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Eres un sistema de evaluación de seguridad para un campamento zombie. Responde SOLO en formato JSON válido.',
         },
-      });
-    }
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1024,
+      response_format: { type: 'json_object' },
+    });
 
-    const result = await model.generateContent(content);
-    const response = await result.response.text();
+    const response = completion.choices[0].message.content;
+    console.log('✅ [IA] Respuesta recibida de Groq');
 
-    console.log('✅ [IA] Respuesta recibida de Gemini');
-
-    let cleanResponse = response.trim();
-    if (cleanResponse.startsWith('```json')) {
-      cleanResponse = cleanResponse
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '');
-    } else if (cleanResponse.startsWith('```')) {
-      cleanResponse = cleanResponse.replace(/```\n?/g, '');
-    }
-
-    const aiResult = JSON.parse(cleanResponse);
+    const aiResult = JSON.parse(response);
     aiResult.decision = convertDecision(aiResult.decision);
 
     return {
       ...aiResult,
-      ai_provider: 'gemini-2.0-flash', // ✅ CORREGIDO
+      ai_provider: 'groq-llama-3.3-70b',
       evaluated_at: new Date().toISOString(),
       input_data: { ...personData, calculated_age: age },
       image_analyzed: !!imageBase64,
     };
   } catch (error) {
-    console.error('❌ Error en IA (Gemini):', error.message);
+    console.error('❌ Error en IA (Groq):', error.message);
     return evaluateWithMock(personData);
   }
 };
