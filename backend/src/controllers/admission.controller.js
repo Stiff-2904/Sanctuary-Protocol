@@ -164,6 +164,7 @@ export const getAIEvaluationController = async (req, res) => {
   try {
     const { request_id } = req.params;
 
+    // Buscar la evaluación en la tabla ia_evaluations
     const [evaluations] = await pool.query(
       `SELECT * FROM ia_evaluations WHERE request_id = ?`,
       [request_id],

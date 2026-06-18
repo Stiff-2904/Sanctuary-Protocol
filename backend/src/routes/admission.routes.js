@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
-import { getAIEvaluationController } from '../controllers/ai.controller.js';
 import {
   createAdmission,
   decideAdmission,
   getAllAdmissions,
   getAdmissionById,
+  getAIEvaluationController,
 } from '../controllers/admission.controller.js';
 
 const router = Router();
@@ -19,12 +19,12 @@ router.get('/', authorizeRoles('Admin', 'SuperAdmin'), getAllAdmissions);
 
 router.get('/:id', getAdmissionById);
 
-router.get('/:request_id/evaluation', authenticate, getAIEvaluationController);
-
 router.patch(
   '/:id/decide',
   authorizeRoles('Admin', 'SuperAdmin'),
   decideAdmission,
 );
+
+router.get('/:request_id/evaluation', authenticate, getAIEvaluationController);
 
 export default router;
