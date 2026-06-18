@@ -18,6 +18,7 @@ import explorationRoutes from './routes/exploration.routes.js';
 import metricsRoutes from './routes/metrics.routes.js';
 import temporaryAssignmentRoutes from './routes/temporaryAssignment.routes.js';
 import productionRoutes from './routes/production.routes.js';
+import { getServerTime } from './utils/serverTime.js';
 
 const app = express();
 
@@ -27,17 +28,14 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-const allowedOrigins = process.env.CORS_ORIGIN
+const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:5173'];
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(
   cors({
-    origin: true, // Permite CUALQUIER origen
+    origin: corsOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['*'],
   }),
 );
 
@@ -53,6 +51,16 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+
+// Hora centralizada del servidor (público — no requiere token)
+app.get('/api/time', async (req, res) => {
+  try {
+    const serverTime = await getServerTime();
+    res.json({ server_time: serverTime });
+  } catch {
+    res.status(500).json({ error: 'Error al obtener la hora del servidor' });
+  }
+});
 app.use('/api/admissions', authenticate, checkSessionTimeout, admissionRoutes);
 app.use(
   '/api/camp-requests',
