@@ -72,6 +72,11 @@ export default function Admission() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
+  const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(
+    null,
+  );
+  const [showAIDetails, setShowAIDetails] = useState(false);
+  const [aiEvaluationDetails, setAiEvaluationDetails] = useState<any>(null);
 
   useEffect(() => {
     fetchAdmissions();
@@ -85,6 +90,17 @@ export default function Admission() {
       .then((res) => setAdmissions(res.data.data ?? []))
       .catch(() => setError("Error al cargar las solicitudes"))
       .finally(() => setLoading(false));
+  };
+
+  const fetchAIEvaluation = async (requestId: number) => {
+    try {
+      const res = await api.get(`/admissions/${requestId}/evaluation`);
+      setAiEvaluationDetails(res.data.data);
+      setShowAIDetails(true);
+    } catch (error) {
+      console.error("Error al obtener evaluación de IA:", error);
+      alert("No se pudo cargar la evaluación de IA");
+    }
   };
 
   const openForm = () => {
@@ -307,73 +323,90 @@ export default function Admission() {
                 flexWrap: "wrap",
               }}
             >
-              <div>
-                <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>
-                  {admission.name}
-                </p>
-                <p style={{ color: "#888", fontSize: "0.8rem" }}>
-                  {new Date(admission.birth_date).toLocaleDateString()} —{" "}
-                  {new Date(admission.request_date).toLocaleDateString()}
-                </p>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  style={{
-                    color: statusColor[admission.status] ?? "#888",
-                    fontFamily: "monospace",
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  ● {statusLabel[admission.status] ?? admission.status}
-                </span>
-                {admission.status === "pending_ai_review" && (
-                  <>
-                    <button
-                      onClick={() =>
-                        handleDecide(admission.request_id, "approved")
-                      }
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #00ff41",
-                        color: "#00ff41",
-                        padding: "0.25rem 0.75rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontFamily: "monospace",
-                        fontSize: "0.8rem",
-                      }}
-                    >
-                      Aprobar
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleDecide(admission.request_id, "rejected")
-                      }
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #ff3333",
-                        color: "#ff3333",
-                        padding: "0.25rem 0.75rem",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontFamily: "monospace",
-                        fontSize: "0.8rem",
-                      }}
-                    >
-                      Rechazar
-                    </button>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+    <div>
+      <p style={{ color: "#e0e0e0", fontFamily: "monospace" }}>
+        {admission.name}
+      </p>
+      <p style={{ color: "#888", fontSize: "0.8rem" }}>
+        {new Date(admission.birth_date).toLocaleDateString()} —{" "}
+        {new Date(admission.request_date).toLocaleDateString()}
+      </p>
+    </div>
+    <div
+      style={{
+        display: "flex",
+        gap: "0.75rem",
+        alignItems: "center",
+      }}
+    >
+      <span
+        style={{
+          color: statusColor[admission.status] ?? "#888",
+          fontFamily: "monospace",
+          fontSize: "0.8rem",
+        }}
+      >
+        ● {statusLabel[admission.status] ?? admission.status}
+      </span>
+      
+      {/* NUEVO BOTÓN: Ver evaluación de IA */}
+      <button
+        onClick={() => fetchAIEvaluation(admission.request_id)}
+        style={{
+          background: "transparent",
+          border: "1px solid #00aaff",
+          color: "#00aaff",
+          padding: "0.25rem 0.75rem",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontFamily: "monospace",
+          fontSize: "0.8rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.25rem",
+        }}
+        title="Ver evaluación completa de IA"
+      >
+        🤖 Ver IA
+      </button>
+      
+      {admission.status === "pending_ai_review" && (
+        <>
+          <button
+            onClick={() => handleDecide(admission.request_id, "approved")}
+            style={{
+              background: "transparent",
+              border: "1px solid #00ff41",
+              color: "#00ff41",
+              padding: "0.25rem 0.75rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.8rem",
+            }}
+          >
+            Aprobar
+          </button>
+          <button
+            onClick={() => handleDecide(admission.request_id, "rejected")}
+            style={{
+              background: "transparent",
+              border: "1px solid #ff3333",
+              color: "#ff3333",
+              padding: "0.25rem 0.75rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              fontSize: "0.8rem",
+            }}
+          >
+            Rechazar
+          </button>
+        </>
+      )}
+    </div>
+  </motion.div>
+))}
 
         {/* Modal formulario */}
         <AnimatePresence>
@@ -611,9 +644,20 @@ export default function Admission() {
                           marginTop: "0.25rem",
                         }}
                       >
-                        <option value="healthy">Sano</option>
-                        <option value="injured">Herido</option>
-                        <option value="sick">Enfermo</option>
+                        <option value="">Selecciona un estado</option>
+                        <option value="sano">🟢 Sano</option>
+                        <option value="herido">
+                          🟡 Herido (no infeccioso)
+                        </option>
+                        <option value="enfermo">
+                          🟠 Enfermo (gripe, infección normal)
+                        </option>
+                        <option value="mordido">
+                          🔴 Mordido / Sospechoso (Riesgo de infección)
+                        </option>
+                        <option value="infectado">
+                          ☠️ Infectado (Zombie / Cuarentena)
+                        </option>
                       </select>
                     </div>
 
@@ -811,6 +855,308 @@ export default function Admission() {
                     </button>
                   </div>
                 )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Modal para ver detalles de la evaluación de IA */}
+        <AnimatePresence>
+          {showAIDetails && aiEvaluationDetails && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.9)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 200,
+                padding: "1rem",
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                style={{
+                  background: "#1a1a1a",
+                  border: "1px solid #00ff41",
+                  borderRadius: "12px",
+                  padding: "2rem",
+                  width: "100%",
+                  maxWidth: "700px",
+                  maxHeight: "90vh",
+                  overflowY: "auto",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "1.5rem",
+                  }}
+                >
+                  <h2 style={{ color: "#00ff41", fontFamily: "monospace" }}>
+                    🤖 Evaluación Completa de IA
+                  </h2>
+                  <button
+                    onClick={() => setShowAIDetails(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#888",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {/* Decisión */}
+                <div
+                  style={{
+                    background: "#0a0a0a",
+                    border: `2px solid ${
+                      aiEvaluationDetails.ai_decision === "APROBADO" ||
+                      aiEvaluationDetails.ai_decision === "approved"
+                        ? "#00ff41"
+                        : "#ff3333"
+                    }`,
+                    borderRadius: "8px",
+                    padding: "1rem",
+                    marginBottom: "1.5rem",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#888",
+                      fontSize: "0.85rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    Decisión de la IA:
+                  </p>
+                  <p
+                    style={{
+                      color:
+                        aiEvaluationDetails.ai_decision === "APROBADO" ||
+                        aiEvaluationDetails.ai_decision === "approved"
+                          ? "#00ff41"
+                          : "#ff3333",
+                      fontSize: "1.5rem",
+                      fontFamily: "monospace",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {aiEvaluationDetails.ai_decision === "APROBADO" ||
+                    aiEvaluationDetails.ai_decision === "approved"
+                      ? "✅ APROBADO"
+                      : "❌ RECHAZADO"}
+                  </p>
+                </div>
+
+                {/* Nivel de confianza */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <p
+                    style={{
+                      color: "#888",
+                      fontSize: "0.85rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    Nivel de confianza:
+                  </p>
+                  <div
+                    style={{
+                      background: "#0a0a0a",
+                      borderRadius: "4px",
+                      padding: "0.5rem",
+                      fontFamily: "monospace",
+                      color: "#ffaa00",
+                    }}
+                  >
+                    {aiEvaluationDetails.ai_confidence
+                      ? `${(aiEvaluationDetails.ai_confidence * 100).toFixed(1)}%`
+                      : "No disponible"}
+                  </div>
+                </div>
+
+                {/* Profesión sugerida */}
+                {aiEvaluationDetails.suggested_profession && (
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <p
+                      style={{
+                        color: "#888",
+                        fontSize: "0.85rem",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Profesión sugerida:
+                    </p>
+                    <div
+                      style={{
+                        background: "#0a0a0a",
+                        borderRadius: "4px",
+                        padding: "0.5rem",
+                        fontFamily: "monospace",
+                        color: "#00ff41",
+                      }}
+                    >
+                      {aiEvaluationDetails.suggested_profession}
+                    </div>
+                    {aiEvaluationDetails.profession_justification && (
+                      <p
+                        style={{
+                          color: "#888",
+                          fontSize: "0.8rem",
+                          marginTop: "0.5rem",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {aiEvaluationDetails.profession_justification}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Razonamiento */}
+                {aiEvaluationDetails.ai_reasoning && (
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <p
+                      style={{
+                        color: "#888",
+                        fontSize: "0.85rem",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      🧠 Razonamiento de la IA:
+                    </p>
+                    <div
+                      style={{
+                        background: "#0a0a0a",
+                        borderRadius: "4px",
+                        padding: "1rem",
+                        color: "#e0e0e0",
+                        lineHeight: "1.6",
+                      }}
+                    >
+                      {aiEvaluationDetails.ai_reasoning}
+                    </div>
+                  </div>
+                )}
+
+                {/* Factores de riesgo */}
+                {aiEvaluationDetails.risk_factors &&
+                  aiEvaluationDetails.risk_factors.length > 0 && (
+                    <div style={{ marginBottom: "1.5rem" }}>
+                      <p
+                        style={{
+                          color: "#888",
+                          fontSize: "0.85rem",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        ⚠️ Factores de riesgo identificados:
+                      </p>
+                      <ul
+                        style={{
+                          background: "#0a0a0a",
+                          borderRadius: "4px",
+                          padding: "1rem",
+                          color: "#ff3333",
+                          margin: 0,
+                        }}
+                      >
+                        {aiEvaluationDetails.risk_factors.map(
+                          (risk: string, i: number) => (
+                            <li key={i} style={{ marginBottom: "0.25rem" }}>
+                              {risk}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                {/* Reglas aplicadas */}
+                {aiEvaluationDetails.rules_applied &&
+                  aiEvaluationDetails.rules_applied.length > 0 && (
+                    <div style={{ marginBottom: "1.5rem" }}>
+                      <p
+                        style={{
+                          color: "#888",
+                          fontSize: "0.85rem",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        📋 Reglas aplicadas:
+                      </p>
+                      <ul
+                        style={{
+                          background: "#0a0a0a",
+                          borderRadius: "4px",
+                          padding: "1rem",
+                          color: "#00ff41",
+                          margin: 0,
+                        }}
+                      >
+                        {aiEvaluationDetails.rules_applied.map(
+                          (rule: string, i: number) => (
+                            <li key={i} style={{ marginBottom: "0.25rem" }}>
+                              {rule}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                {/* Proveedor de IA */}
+                {aiEvaluationDetails.ai_provider && (
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <p
+                      style={{
+                        color: "#888",
+                        fontSize: "0.85rem",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      Modelo de IA utilizado:
+                    </p>
+                    <div
+                      style={{
+                        background: "#0a0a0a",
+                        borderRadius: "4px",
+                        padding: "0.5rem",
+                        fontFamily: "monospace",
+                        color: "#00aaff",
+                      }}
+                    >
+                      {aiEvaluationDetails.ai_provider}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowAIDetails(false)}
+                  style={{
+                    background: "#00ff41",
+                    color: "#0a0a0a",
+                    border: "none",
+                    padding: "0.75rem 1.5rem",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    width: "100%",
+                  }}
+                >
+                  Cerrar
+                </button>
               </motion.div>
             </motion.div>
           )}
