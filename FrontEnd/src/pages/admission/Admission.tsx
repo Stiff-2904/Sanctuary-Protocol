@@ -72,9 +72,6 @@ export default function Admission() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
-  const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(
-    null,
-  );
   const [showAIDetails, setShowAIDetails] = useState(false);
   const [aiEvaluationDetails, setAiEvaluationDetails] = useState<any>(null);
 
