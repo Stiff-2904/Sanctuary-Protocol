@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout();
         alert("⚠️ Sesión expirada por inactividad (20 minutos)");
       }
-    }, 2000);
+    }, 60000);
 
     window.addEventListener("mousemove", handleActivity);
     window.addEventListener("keydown", handleActivity);
