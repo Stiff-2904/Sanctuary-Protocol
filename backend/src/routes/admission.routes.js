@@ -13,7 +13,11 @@ const router = Router();
 
 router.use(authenticate);
 
-router.post('/', createAdmission);
+router.post(
+  '/',
+  authorizeRoles('Admin', 'SuperAdmin', 'ResourceManager'),
+  createAdmission,
+);
 
 router.get('/', authorizeRoles('Admin', 'SuperAdmin'), getAllAdmissions);
 
